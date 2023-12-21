@@ -38,9 +38,11 @@ final class CurrencyConvertDIContainerImp {
     }
 
     func makeCurrencyConvertRepository(_ apiService: NetworkService) -> CurrencyRepository {
-        CurrencyRepositoryImp(dependencies: .init(
+        let cache = makeCurrencyConvertAPICache()
+        return CurrencyRepositoryImp(dependencies: .init(
             networkService: apiService,
-            networkInterceptor: [ThrottleInterceptor(cache: makeCurrencyConvertAPICache())]
+            networkInterceptor: [CacheInterceptor(cache: cache)],
+            apiCache: cache
         ))
     }
 

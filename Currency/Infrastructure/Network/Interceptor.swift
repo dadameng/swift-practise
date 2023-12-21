@@ -16,73 +16,70 @@ extension RequestInterceptor {
     }
 }
 
-typealias ResponseInterceptorResult = (processResponse: (Data, URLResponse), continueProcessing: Bool)
+typealias ResponseInterceptorResult<T> = (processResponse: (Data, URLResponse), result: InterceptorResult<T>)
+typealias DecodeResponseInterceptorResult<T> = (processedResponse: T, result: InterceptorResult<T>)
 
 protocol ResponseInterceptor {
-    func processBeforeDecode<T: ApiTask>(on rawResponse: (Data, URLResponse), request: T) -> ResponseInterceptorResult
-    func processAfterDecode<T: ApiTask>(on decodedResponse: T.Response, request: T) -> (processedResponse: T.Response, continueProcessing: Bool)
+    func processBeforeDecode<T: ApiTask>(on rawResponse: (Data, URLResponse), request: T) -> ResponseInterceptorResult<T.Response>
+    func processAfterDecode<T: ApiTask>(on decodedResponse: T.Response, request: T) -> DecodeResponseInterceptorResult<T.Response>
 }
 
 extension ResponseInterceptor {
-    func processBeforeDecode(on rawResponse: (Data, URLResponse), request _: some ApiTask) -> ResponseInterceptorResult {
-        (rawResponse, true)
+    func processBeforeDecode<T>(on rawResponse: (Data, URLResponse), request _: T) -> ResponseInterceptorResult<T.Response> where T: ApiTask {
+        (rawResponse, .continueProcessing)
     }
 
-    func processAfterDecode<T: ApiTask>(on decodedResponse: T.Response, request _: T) -> (processedResponse: T.Response, continueProcessing: Bool) {
-        (decodedResponse, true)
+    func processAfterDecode<T: ApiTask>(on decodedResponse: T.Response, request _: T) -> DecodeResponseInterceptorResult<T.Response> {
+        (decodedResponse, .continueProcessing)
     }
 }
 
 typealias NetworkInterceptor = RequestInterceptor & ResponseInterceptor
 
-private protocol ApiTaskThrottle: Requestable {
-    var throttleInterval: TimeInterval { get }
-}
-
-extension APIEndpoint: ApiTaskThrottle {
-    var throttleInterval: TimeInterval {
-        30 * 60
-    }
-}
-
-final class ThrottleInterceptor {
+final class CacheInterceptor {
     let cache: APICache
-    @UserDefault(key: "requestTimeMap", defaultValue: [:]) var requestTimeMap: [String: TimeInterval]
-
+    private var etagCache: [String: String] = [:]
+    private var dateCache: [String: String] = [:]
     init(cache: APICache) {
         self.cache = cache
     }
 }
 
-extension ThrottleInterceptor: NetworkInterceptor {
+extension CacheInterceptor: NetworkInterceptor {
     func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request: T) async -> RequestInterceptorResult<T.Response> {
-        guard let throttleRequest = request as? (any ApiTaskThrottle) else {
-            return (sourceURLRequest, .continueProcessing)
+        let requestKey = request.uniqueKey
+
+        // Retrieve ETag and Date from cache
+        var newURLRequest = sourceURLRequest
+        if let etag = etagCache[requestKey], let date = dateCache[requestKey] {
+            newURLRequest.addValue(etag, forHTTPHeaderField: "If-None-Match")
+            newURLRequest.addValue(date, forHTTPHeaderField: "If-Modified-Since")
         }
+        
+        return (newURLRequest, .continueProcessing)
+    }
+    
+    func processBeforeDecode<T>(on rawResponse: (Data, URLResponse), request: T) -> ResponseInterceptorResult<T.Response> where T: ApiTask {
+        guard let httpResponse = rawResponse.1 as? HTTPURLResponse, httpResponse.statusCode == 304 else {
+            return (rawResponse, .continueProcessing)
+        }
+        let requestKey = request.uniqueKey
 
-        let now = Date().timeIntervalSince1970
-        let requestKey = throttleRequest.uniqueKey
-
-        if let lastRequestTime = requestTimeMap[requestKey], now - lastRequestTime < throttleRequest.throttleInterval {
-            do {
-                if let cacheResponse: T.Response = try await cache.convenienceResponse(key: requestKey) {
-                    return (sourceURLRequest, .stopProcessing(cacheResponse))
-                }
-            } catch {
-                print("Read cache error: \(error)")
+        if let cachedResponse: T.Response = cache.responseFromMemoryCache(key: requestKey) {
+            return (rawResponse, .stopProcessing(cachedResponse))
+        } else {
+            if let etag = httpResponse.allHeaderFields["ETag"] as? String,
+               let date = httpResponse.allHeaderFields["Date"] as? String {
+                etagCache[requestKey] = etag
+                dateCache[requestKey] = date
             }
-
-            requestTimeMap.removeValue(forKey: requestKey)
+            return (rawResponse, .continueProcessing)
         }
-
-        return (sourceURLRequest, .continueProcessing)
     }
 
-    func processAfterDecode<T: ApiTask>(on decodedResponse: T.Response, request: T) -> (processedResponse: T.Response, continueProcessing: Bool) {
+    func processAfterDecode<T: ApiTask>(on decodedResponse: T.Response, request: T) -> DecodeResponseInterceptorResult<T.Response> {
         let requestKey = request.uniqueKey
-        requestTimeMap[requestKey] = Date().timeIntervalSince1970
         cache.convenienceStore(with: decodedResponse, key: requestKey)
-
-        return (decodedResponse, true)
+        return (decodedResponse, .continueProcessing)
     }
 }

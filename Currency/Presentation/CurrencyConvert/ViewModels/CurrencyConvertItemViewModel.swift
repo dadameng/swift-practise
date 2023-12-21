@@ -8,4 +8,5 @@ struct CurrencyConvertItemViewModel: Equatable {
     let imageName: String
     let selected: Bool
     let hasValidInput: Bool
+    let isLoading: Bool
 }

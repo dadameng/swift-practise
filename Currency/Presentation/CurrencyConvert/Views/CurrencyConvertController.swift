@@ -20,7 +20,7 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
         numericKeyboard = NumericKeyboard(
-            maxInput: Int.max, 
+            maxInput: Int.max,
             maximumFractionDigits: viewModel.formatteMaximumFractionDigits,
             inputCallback: handleKeyboardInputChange,
             onLimitedRuleInvoked: handleInvalidInput
@@ -48,14 +48,18 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
 
     private func bindViewModel() {
         viewModel.viewDidLoad(viewController: self)
+        viewModel.isRequestingPublisher.receive(on: RunLoop.main).sink { [unowned self] isLoading in
+            self.numericKeyboard?.disableInput = isLoading
+            isLoading ? self.triggerShimmerAnimation() : self.removeShimmerAnimation()
+        }.store(in: &cancellables)
         viewModel.itemViewModelsPublisher.receive(on: RunLoop.main).sink { [unowned self] result in
             switch result {
             case .success:
-                tableView.reloadData()
+                self.tableView.reloadData()
             case let .failure(error):
                 print("error is : \(error)")
             }
-            tableView.refreshControl?.endRefreshing()
+            self.tableView.refreshControl?.endRefreshing()
         }.store(in: &cancellables)
     }
 
@@ -137,7 +141,23 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
         viewModel.didTriggerRefresh()
     }
 
-    // MARK: - ui setup
+    private func triggerShimmerAnimation() {
+        for cell in tableView.visibleCells {
+            if let cell = cell as? CurrencyConvertTableCell {
+                cell.triggerShimmerAnimation()
+            }
+        }
+    }
+
+    private func removeShimmerAnimation() {
+        for cell in tableView.visibleCells {
+            if let cell = cell as? CurrencyConvertTableCell {
+                cell.removeShimmerAnimation()
+            }
+        }
+    }
+
+    // MARK: - UI Setup
 
     private func setupNumericKeyboard() {
         view.addSubview(numericKeyboard!)

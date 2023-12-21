@@ -76,10 +76,10 @@ extension DefaultNetworkService: NetworkService {
                 let responseInterceptors = config.commonResponseInterceptors + endpoint.responseInterceptors
                 var currentResponse = (data, response)
                 for interceptor in responseInterceptors {
-                    let (processResponse, continueProcessing) = interceptor.processBeforeDecode(on: currentResponse, request: endpoint)
+                    let (processResponse, result) = interceptor.processBeforeDecode(on: currentResponse, request: endpoint)
                     currentResponse = processResponse
-                    if !continueProcessing {
-                        break
+                    if case let .stopProcessing(decodedResponse) = result {
+                        return decodedResponse
                     }
                 }
 
@@ -90,10 +90,10 @@ extension DefaultNetworkService: NetworkService {
                 var decodedResponse = try endpoint.responseDecoder.decode(T.Response.self, from: currentResponse.0)
 
                 for interceptor in responseInterceptors {
-                    let (processResponse, continueProcessing) = interceptor.processAfterDecode(on: decodedResponse, request: endpoint)
-                    decodedResponse = processResponse
-                    if !continueProcessing {
-                        break
+                    let (processedResponse, result) = interceptor.processAfterDecode(on: decodedResponse, request: endpoint)
+                    decodedResponse = processedResponse
+                    if case let .stopProcessing(resultValue) = result {
+                        return resultValue
                     }
                 }
                 return decodedResponse

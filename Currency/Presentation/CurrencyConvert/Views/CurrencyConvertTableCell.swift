@@ -1,26 +1,29 @@
 import UIKit
 
-protocol CurrencyConvertTableCellInput {
+protocol CurrencyConvertTableCellInterface {
     func updateCell(with viewModel: CurrencyConvertItemViewModel)
     func triggerShakeAnimation()
+    func triggerShimmerAnimation()
+    func removeShimmerAnimation()
 }
 
 final class CurrencyConvertTableCell: UITableViewCell {
     static let reuseIdentifier = String(describing: CurrencyConvertTableCell.self)
 
-    private var flagImageView: UIImageView = {
+    private var viewModel: CurrencyConvertItemViewModel?
+    private let flagImageView: UIImageView = {
         let imageView = UIImageView()
         return imageView
     }()
 
-    private var currencyTitleLabel: UILabel = {
+    private let currencyTitleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
         label.textColor = UIColor(named: "PrimaryCellTitleColor")
         return label
     }()
 
-    private var currencyValueLabel: UILabel = {
+    private let currencyValueLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 22, weight: .bold)
         label.textColor = UIColor(named: "SecondCellTextColor")
@@ -29,14 +32,20 @@ final class CurrencyConvertTableCell: UITableViewCell {
         return label
     }()
 
-    private var currencyNameLabel: UILabel = {
+    private let currencyNameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 12, weight: .regular)
         label.textColor = UIColor(named: "SecondCellTextColor")
         return label
     }()
 
-    private var cursor: BlinkingCursor = {
+    private var shimmerView: UIView = {
+        let view = UIView()
+        view.isHidden = true
+        return view
+    }()
+
+    private let cursor: BlinkingCursor = {
         let cursor = BlinkingCursor(cursorColor: .red)
         cursor.isHidden = true
         return cursor
@@ -44,10 +53,10 @@ final class CurrencyConvertTableCell: UITableViewCell {
 
     private var gradientLayer: CAGradientLayer = {
         let gradientLayer = CAGradientLayer()
-        gradientLayer.colors = [UIColor(named: "PrimaryCellBgColor")!.withAlphaComponent(0.5).cgColor, UIColor.clear.cgColor]
+        gradientLayer.colors = [UIColor.clear.cgColor, UIColor.white.cgColor, UIColor.clear.cgColor]
         gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.5)
         gradientLayer.endPoint = CGPoint(x: 1.0, y: 0.5)
-        gradientLayer.isHidden = true
+        gradientLayer.locations = [0.0, 0.5, 1.0]
         return gradientLayer
     }()
 
@@ -70,20 +79,20 @@ final class CurrencyConvertTableCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        gradientLayer.frame = currencyTitleLabel.frame
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        removeShimmerAnimation()
+        print("prepareForReuse")
     }
 
     // MARK: - UI setup
 
     private func setupViews() {
         contentView.backgroundColor = .white
-        [flagImageView, currencyTitleLabel, currencyValueLabel, currencyNameLabel, cursor].forEach {
+        [flagImageView, currencyTitleLabel, currencyValueLabel, currencyNameLabel, cursor, shimmerView].forEach {
             $0.translatesAutoresizingMaskIntoConstraints = false
             contentView.addSubview($0)
         }
-        contentView.layer.addSublayer(gradientLayer)
     }
 
     private func setupConstraints() {
@@ -120,7 +129,6 @@ final class CurrencyConvertTableCell: UITableViewCell {
         currencyTitleLabel.isHidden = false
         currencyValueLabel.leadingAnchor.constraint(equalTo: currencyTitleLabel.trailingAnchor, constant: viewsSpace).isActive = false
         currencyValueLabel.leadingAnchor.constraint(equalTo: flagImageView.trailingAnchor, constant: viewsSpace).isActive = false
-        gradientLayer.isHidden = true
 
         if isSelected {
             currencyValueLabel.leadingAnchor.constraint(equalTo: currencyTitleLabel.trailingAnchor, constant: viewsSpace).isActive = true
@@ -134,15 +142,16 @@ final class CurrencyConvertTableCell: UITableViewCell {
 
             if isValueLabelTooLong {
                 currencyValueLabel.leadingAnchor.constraint(equalTo: flagImageView.trailingAnchor, constant: viewsSpace).isActive = true
-                gradientLayer.isHidden = false
             }
         }
         contentView.layoutIfNeeded()
     }
 }
 
-extension CurrencyConvertTableCell: CurrencyConvertTableCellInput {
+extension CurrencyConvertTableCell: CurrencyConvertTableCellInterface {
     func updateCell(with viewModel: CurrencyConvertItemViewModel) {
+        print("updateCell text: \(viewModel.valueString) title : \(viewModel.title)")
+        self.viewModel = viewModel
         flagImageView.image = UIImage(named: viewModel.imageName)
         currencyTitleLabel.text = viewModel.title
         currencyNameLabel.text = viewModel.currencyName
@@ -153,6 +162,7 @@ extension CurrencyConvertTableCell: CurrencyConvertTableCellInput {
         if viewModel.selected {
             cursor.restartBlinking()
         }
+        removeShimmerAnimation()
         contentView.layoutIfNeeded()
     }
 
@@ -162,5 +172,44 @@ extension CurrencyConvertTableCell: CurrencyConvertTableCellInput {
         animation.duration = 0.6
         animation.values = [-10, 10, -10, 10, -5, 5, -2.5, 2.5, 0]
         layer.add(animation, forKey: "shake")
+    }
+
+    // MARK: - UI Animation
+
+    func triggerShimmerAnimation() {
+        shimmerView.isHidden = false
+        shimmerView.backgroundColor = contentView.backgroundColor
+        shimmerView.frame = currencyValueLabel.frame
+        gradientLayer.frame = CGRect(x: 0, y: 0, width: shimmerView.bounds.width, height: shimmerView.bounds.height)
+
+        let animation = CABasicAnimation(keyPath: "locations")
+        animation.fromValue = [-1.0, -0.5, 0.0]
+        animation.toValue = [1.0, 1.5, 2.0]
+        animation.duration = 1.0
+        animation.repeatCount = .infinity
+        gradientLayer.add(animation, forKey: "shimmer")
+
+        shimmerView.layer.addSublayer(gradientLayer)
+        let mask = UILabel(frame: shimmerView.bounds)
+        mask.text = currencyValueLabel.text
+        mask.font = currencyValueLabel.font
+        mask.textColor = currencyValueLabel.textColor
+        mask.textAlignment = currencyValueLabel.textAlignment
+        mask.contentMode = currencyValueLabel.contentMode
+        shimmerView.mask = mask
+        cursor.stopBlinking()
+        cursor.isHidden = true
+    }
+
+    func removeShimmerAnimation() {
+        gradientLayer.removeAllAnimations()
+        gradientLayer.removeFromSuperlayer()
+        shimmerView.mask = nil
+        shimmerView.isHidden = true
+        shimmerView.layer.removeAllAnimations()
+        if viewModel?.selected == true {
+            cursor.isHidden = false
+            cursor.restartBlinking()
+        }
     }
 }

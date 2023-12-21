@@ -84,7 +84,7 @@ final class KeyboardInputHandler {
     }
 
     private func handleDeleteInput() throws {
-        guard !displayedText.isEmpty && displayedText != "0" else {
+        guard !displayedText.isEmpty, displayedText != "0" else {
             throw KeyboardInputError.emptyDelete
         }
 
@@ -120,6 +120,17 @@ final class KeyboardInputHandler {
 @MainActor
 final class NumericKeyboard: UIView {
     var currentValue: String?
+    var disableInput = false {
+        didSet {
+            for (_, rowButtons) in buttonsLayout.enumerated() {
+                for (_, title) in rowButtons.enumerated() {
+                    if let button = buttons[title] {
+                        button.isEnabled = !disableInput
+                    }
+                }
+            }
+        }
+    }
 
     private var inputHandler: KeyboardInputHandler
     private let buttonsLayout = [

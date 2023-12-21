@@ -20,6 +20,12 @@ class BlinkingCursor: UIView {
     func restartBlinking() {
         layer.removeAnimation(forKey: "blinking")
         startBlinking()
+        print("blinking")
+    }
+    
+    func stopBlinking() {
+        print("stop blinking")
+        layer.removeAnimation(forKey: "blinking")
     }
 
     private func startBlinking() {

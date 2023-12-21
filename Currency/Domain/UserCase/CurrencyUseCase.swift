@@ -17,7 +17,8 @@ protocol CurrencyUseCase {
     var currentCurrency: Currency { get }
     var convertResults: [Currency: Decimal] { get }
     func updateSelectedSymbols(_ symbols: [Currency])
-    func loadLatestCurrency()
+    func refreshLatestCurrency()
+    func loadCurrency()
     func convertCurrency(from: Currency, value: Decimal)
     func cancelRequestLatestCurrency()
 }
@@ -32,7 +33,7 @@ final class CurrencyConvertUseCaseImp {
     var useCaseOutputDelegate: CurrencyUseCaseCallback?
     var baseExchangeData: ExchangeData?
     var taskUseForCancel: Task<ExchangeData, Error>?
-    var convertResults: [Currency: Decimal] = [:]
+    var convertResults: [Currency: Decimal]
 
     init(currencyRepository: CurrencyRepository, selectedSymbols: [Currency], currentCurrency: Currency, initialCurrencyValue: Decimal) {
         self.currencyRepository = currencyRepository
@@ -40,6 +41,7 @@ final class CurrencyConvertUseCaseImp {
         self.currentCurrency = currentCurrency
         self.initialCurrencyValue = initialCurrencyValue
         currentCurrencyValue = initialCurrencyValue
+        convertResults = Dictionary(uniqueKeysWithValues: selectedSymbols.map { ($0, Decimal(0)) })
     }
 }
 
@@ -73,18 +75,27 @@ extension CurrencyConvertUseCaseImp: CurrencyUseCase {
         useCaseOutput?.didUpdateConvertResults(convertResults)
     }
 
-    func loadLatestCurrency() {
+    func refreshLatestCurrency() {
+        let task = currencyRepository.fetchLatestCurrencys()
+        executeCurrencyTask(task, withInitialValue: currentCurrencyValue)
+    }
+
+    func loadCurrency() {
+        let task = currencyRepository.fetchCurrencys()
+        executeCurrencyTask(task, withInitialValue: initialCurrencyValue)
+    }
+    
+    private func executeCurrencyTask(_ task: FetchResult<ExchangeData>, withInitialValue initialValue: Decimal) {
         guard taskUseForCancel == nil else {
             taskUseForCancel?.cancel()
             return
         }
-        let task = currencyRepository.fetchCurrencysLatest()
         taskUseForCancel = task
         Task.init {
             do {
                 let exchangeData = try await task.value
                 baseExchangeData = exchangeData
-                privateConvertCurrency(from: currentCurrency, value: initialCurrencyValue)
+                privateConvertCurrency(from: currentCurrency, value: initialValue)
                 useCaseOutput?.didLoadSuccess(convertResults)
                 taskUseForCancel = nil
             } catch let requestError as NetworkServiceError {
