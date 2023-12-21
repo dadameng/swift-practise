@@ -20,7 +20,7 @@ final class CurrencyConvertDIContainerImp {
     private let initialSelectedSymbols: [Currency] = [.USD, .JPY, .CNY, .HKD, .TWD]
 
     private let dependencies: Dependencies
-    private let initialCurrencyValue = "100"
+    private let initialCurrencyValue = Decimal(100)
 
     init(dependencies: Dependencies) {
         self.dependencies = dependencies
@@ -54,7 +54,10 @@ final class CurrencyConvertDIContainerImp {
     }
 
     @MainActor func makeCurrencyConvertViewModel(_ useCase: CurrencyUseCase) -> CurrencyConvertViewModel {
-        CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: CurrencyConvertViewModelImp.Dependencies(useCase: useCase))
+        CurrencyConvertViewModelImp(
+            selectedIndex: 0,
+            dependencies: CurrencyConvertViewModelImp.Dependencies(useCase: useCase)
+        )
     }
 
     func makeCurrencyConvertCoordinator() -> CurrencyConvertCoordinator {

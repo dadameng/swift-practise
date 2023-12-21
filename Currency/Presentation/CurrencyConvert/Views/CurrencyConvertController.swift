@@ -20,9 +20,10 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
         self.viewModel = viewModel
         super.init(nibName: nil, bundle: nil)
         numericKeyboard = NumericKeyboard(
+            maxInput: Int.max, 
+            maximumFractionDigits: viewModel.formatteMaximumFractionDigits,
             inputCallback: handleKeyboardInputChange,
-            triggerMaxLimit: handleTriggerMaxLimit,
-            triggerDeleteAlert: handleTriggerDeleteAlert
+            onLimitedRuleInvoked: handleInvalidInput
         )
     }
 
@@ -87,7 +88,7 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
         guard indexPath.row != viewModel.selectedIndex else {
             return
         }
-        numericKeyboard?.reset()
+        numericKeyboard?.reset(.initialized)
         viewModel.didResetInput()
         viewModel.didSelectItem(at: indexPath.row)
     }
@@ -112,17 +113,12 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
 
     // MARK: - handle change
 
-    private func handleKeyboardInputChange(_ input: String) {
-        print("input \(input)")
+    private func handleKeyboardInputChange(_ input: String?) {
         viewModel.didInputValidValue()
         viewModel.didUpdateAmount(input)
     }
 
-    private func handleTriggerMaxLimit() {
-        triggerShakeCurrentCell()
-    }
-
-    private func handleTriggerDeleteAlert() {
+    private func handleInvalidInput(_: KeyboardInputError) {
         triggerShakeCurrentCell()
     }
 

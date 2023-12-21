@@ -2,10 +2,6 @@
 import XCTest
 
 final class CurrencyConvertUseCaseImpTests: XCTestCase {
-    struct NetworkTask<T> {
-        let task: Task<T, Error>
-        let cancellable: NetworkCancellable
-    }
 
     class MockCurrencyRepository: CurrencyRepository {
         var fetchCurrencysLatestCalled = false
@@ -29,24 +25,13 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
         }
     }
 
-    class MockNetworkCancellable: NetworkCancellable {
-        func isCancelled() -> Bool {
-            cancelled
-        }
-
-        var cancelled = false
-
-        func cancel() {
-            cancelled = true
-        }
-    }
 
     class MockUseCaseOutput: CurrencyUseCaseCallback {
         var updateSelectedSymbolsCalled = false
         var updateConvertResultsCalled = false
         var loadSuccessCalled = false
         var loadFailureCalled = false
-        var mockConvertResults: [Currency: String] = [:]
+        var mockConvertResults: [Currency: Decimal] = [:]
         var loadSuccessHandler: (() -> Void)?
         var loadFailureHandler: (() -> Void)?
         var didUpdateConvertResultsHandler: (() -> Void)?
@@ -56,13 +41,13 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             updateSelectedSymbolsCalled = true
         }
 
-        func didUpdateConvertResults(_ convertResults: [Currency: String]) {
+        func didUpdateConvertResults(_ convertResults: [Currency: Decimal]) {
             updateConvertResultsCalled = true
             mockConvertResults = convertResults
             didUpdateConvertResultsHandler?()
         }
 
-        func didLoadSuccess(_ convertResults: [Currency: String]) {
+        func didLoadSuccess(_ convertResults: [Currency: Decimal]) {
             loadSuccessCalled = true
             mockConvertResults = convertResults
 
@@ -88,7 +73,7 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             currencyRepository: mockCurrencyRepository,
             selectedSymbols: [.JPY, .USD],
             currentCurrency: .USD,
-            initialCurrencyValue: "100"
+            initialCurrencyValue: Decimal(100)
         )
         useCase.useCaseOutputDelegate = mockUseCaseOutput
     }
@@ -119,9 +104,9 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
         XCTAssertTrue(mockUseCaseOutput.loadSuccessCalled)
         XCTAssertFalse(mockUseCaseOutput.loadFailureCalled)
         XCTAssertEqual(useCase.latestTimestamp, 123_123_123)
-        XCTAssertEqual(useCase.convertResults[.JPY], "15,000")
+        XCTAssertEqual(useCase.convertResults[.JPY], Decimal(15000))
         XCTAssertEqual(mockUseCaseOutput.mockConvertResults.count, 2)
-        XCTAssertEqual(mockUseCaseOutput.mockConvertResults[.JPY], "15,000")
+        XCTAssertEqual(mockUseCaseOutput.mockConvertResults[.JPY], Decimal(15000))
     }
 
     func testLoadLatestCurrency_whenRequestFail_thenCallbackFailBeingCalled() {
@@ -183,12 +168,12 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
         wait(for: [expectation], timeout: 3.0)
 
         let currency: Currency = .JPY
-        let value = "150"
+        let value = Decimal(150)
 
         useCase.convertCurrency(from: currency, value: value)
 
         XCTAssertTrue(mockUseCaseOutput.updateConvertResultsCalled)
-        XCTAssertEqual(mockUseCaseOutput.mockConvertResults[.USD], "1")
+        XCTAssertEqual(mockUseCaseOutput.mockConvertResults[.USD], Decimal(1))
     }
 
     func testCancelLoad_whenLoadCurrency_thenCancel() {

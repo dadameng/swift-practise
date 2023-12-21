@@ -6,7 +6,7 @@ enum CurrencyConvertViewModelOutputError: Error {
 }
 
 protocol CurrencyConvertViewModelInput: ViewControllerLifecycleBehavior, CurrencyUseCaseCallback {
-    func didUpdateAmount(_ amount: String)
+    func didUpdateAmount(_ amount: String?)
     func didTriggerRefresh()
     func didSelectItem(at index: Int)
     func willChangeItem(_ value: String)
@@ -15,6 +15,7 @@ protocol CurrencyConvertViewModelInput: ViewControllerLifecycleBehavior, Currenc
 }
 
 protocol CurrencyConvertViewModelOutput {
+    var formatteMaximumFractionDigits: Int { get }
     var itemViewModels: [CurrencyConvertItemViewModel] { get }
     var lastTimeString: String { get }
     var selectedSymbols: [Currency] { get }
@@ -33,7 +34,6 @@ final class CurrencyConvertViewModelImp {
         let useCase: CurrencyUseCase
     }
 
-    private var internalItemViewModels: [CurrencyConvertItemViewModel] = []
     var selectedIndex: Int {
         didSet {
             let maxIndex = dependencies.useCase.selectedSymbols.count - 1
@@ -43,26 +43,37 @@ final class CurrencyConvertViewModelImp {
         }
     }
 
+    var formatteMaximumFractionDigits = 3
+
+    private var currentInput: String = ""
+    private var internalItemViewModels: [CurrencyConvertItemViewModel] = []
     private var keyboardHasValidInput = false
-
-    private var cancelToken: NetworkCancellable?
     private let dependencies: Dependencies
-
     private var successSubject = PassthroughSubject<[CurrencyConvertItemViewModel], Never>()
     private var failureSubject = PassthroughSubject<CurrencyConvertViewModelOutputError, Never>()
 
     init(selectedIndex: Int, dependencies: Dependencies) {
         self.selectedIndex = selectedIndex
         self.dependencies = dependencies
+        currentInput = "\(dependencies.useCase.initialCurrencyValue)"
     }
 
-    func updateItemViewModels(_ convertResults: [Currency: String]) {
+    private lazy var formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = formatteMaximumFractionDigits
+        formatter.roundingMode = .halfUp
+        return formatter
+    }()
+
+    func updateItemViewModels(_ convertResults: [Currency: Decimal]) {
         internalItemViewModels = dependencies.useCase.selectedSymbols.enumerated()
             .map { [unowned self] index, currency in
                 CurrencyConvertItemViewModel(
                     title: currency.rawValue,
                     currencyName: CurrencyDesciption.descriptions[currency]!,
-                    valueString: convertResults[currency]!,
+                    valueString: selectedIndex == index ? currentInput : formatter.string(for: convertResults[currency])!,
                     imageName: currency.rawValue.lowercased(),
                     selected: selectedIndex == index,
                     hasValidInput: keyboardHasValidInput
@@ -102,11 +113,11 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
         dependencies.useCase.updateSelectedSymbols(symblos)
     }
 
-    func didUpdateConvertResults(_ convertResults: [Currency: String]) {
+    func didUpdateConvertResults(_ convertResults: [Currency: Decimal]) {
         updateItemViewModels(convertResults)
     }
 
-    func didLoadSuccess(_ convertResults: [Currency: String]) {
+    func didLoadSuccess(_ convertResults: [Currency: Decimal]) {
         updateItemViewModels(convertResults)
     }
 
@@ -139,7 +150,7 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
     }
 
     func cancelRequestLatestCurrency() {
-        cancelToken?.cancel()
+        dependencies.useCase.cancelRequestLatestCurrency()
     }
 
     var itemViewModelsPublisher: AnyPublisher<
@@ -153,10 +164,20 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
         .eraseToAnyPublisher()
     }
 
-    func didUpdateAmount(_ amount: String) {
+    func didUpdateAmount(_ amount: String?) {
+        currentInput = amount ?? "0"
+        guard let decimalAmount =  Decimal(string: currentInput),
+              decimalAmount != dependencies.useCase.currentCurrencyValue ||
+              selectedSymbols[selectedIndex] != dependencies.useCase.currentCurrency
+        else {
+            updateItemViewModels(dependencies.useCase.convertResults)
+            return
+        }
+
+        // 转换成功且值不同，进行货币转换
         dependencies.useCase.convertCurrency(
             from: dependencies.useCase.selectedSymbols[selectedIndex],
-            value: amount
+            value: decimalAmount
         )
     }
 
@@ -168,7 +189,7 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
 
     func didSelectItem(at index: Int) {
         selectedIndex = index
-        didUpdateAmount(dependencies.useCase.initialCurrencyValue)
+        didUpdateAmount("\(dependencies.useCase.initialCurrencyValue)")
     }
 }
 

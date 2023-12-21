@@ -3,20 +3,22 @@ import Foundation
 
 protocol CurrencyUseCaseCallback {
     func didUpdateSelectedSymbols(_ symblos: [Currency])
-    func didUpdateConvertResults(_ convertResults: [Currency: String])
-    func didLoadSuccess(_ convertResults: [Currency: String])
+    func didUpdateConvertResults(_ convertResults: [Currency: Decimal])
+    func didLoadSuccess(_ convertResults: [Currency: Decimal])
     func didLoadFailure(_ error: NetworkServiceError)
 }
 
 protocol CurrencyUseCase {
     var useCaseOutput: CurrencyUseCaseCallback? { get set }
-    var initialCurrencyValue: String { get }
+    var initialCurrencyValue: Decimal { get }
+    var currentCurrencyValue: Decimal { get }
     var latestTimestamp: TimeInterval { get }
     var selectedSymbols: [Currency] { get }
-    var convertResults: [Currency: String] { get }
+    var currentCurrency: Currency { get }
+    var convertResults: [Currency: Decimal] { get }
     func updateSelectedSymbols(_ symbols: [Currency])
     func loadLatestCurrency()
-    func convertCurrency(from: Currency, value: String)
+    func convertCurrency(from: Currency, value: Decimal)
     func cancelRequestLatestCurrency()
 }
 
@@ -24,24 +26,15 @@ final class CurrencyConvertUseCaseImp {
     private let currencyRepository: CurrencyRepository
     var selectedSymbols: [Currency]
     var currentCurrency: Currency
-    var currentCurrencyValue: String
-    var initialCurrencyValue: String
+    var currentCurrencyValue: Decimal
+    var initialCurrencyValue: Decimal
 
     var useCaseOutputDelegate: CurrencyUseCaseCallback?
     var baseExchangeData: ExchangeData?
     var taskUseForCancel: Task<ExchangeData, Error>?
-    var convertResults: [Currency: String] = [:]
+    var convertResults: [Currency: Decimal] = [:]
 
-    lazy var formatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.minimumFractionDigits = 0
-        formatter.maximumFractionDigits = 2
-        formatter.roundingMode = .halfUp
-        return formatter
-    }()
-
-    init(currencyRepository: CurrencyRepository, selectedSymbols: [Currency], currentCurrency: Currency, initialCurrencyValue: String) {
+    init(currencyRepository: CurrencyRepository, selectedSymbols: [Currency], currentCurrency: Currency, initialCurrencyValue: Decimal) {
         self.currencyRepository = currencyRepository
         self.selectedSymbols = selectedSymbols
         self.currentCurrency = currentCurrency
@@ -68,9 +61,9 @@ extension CurrencyConvertUseCaseImp: CurrencyUseCase {
         taskUseForCancel?.cancel()
     }
 
-    func convertCurrency(from: Currency, value: String) {
+    func convertCurrency(from: Currency, value: Decimal) {
         currentCurrencyValue = value
-        privateConvertCurrency(from: from, value: value)
+        privateConvertCurrency(from: from, value: currentCurrencyValue)
         useCaseOutput?.didUpdateConvertResults(convertResults)
     }
 
@@ -101,16 +94,16 @@ extension CurrencyConvertUseCaseImp: CurrencyUseCase {
         }
     }
 
-    private func privateConvertCurrency(from: Currency, value: String) {
+    private func privateConvertCurrency(from: Currency, value: Decimal) {
         guard let rates = baseExchangeData?.rates else { return }
         guard let rate = rates[from] else { return }
-        let currentValue = Decimal(string: value) ?? Decimal(0)
+        let currentValue = value
 
         let baseAmount = currentValue / rate
-        convertResults = selectedSymbols.reduce(into: [Currency: String]()) { result, currencyKey in
+        convertResults = selectedSymbols.reduce(into: [Currency: Decimal]()) { result, currencyKey in
             if let currencyRate = rates[currencyKey] {
                 let convertedValue = baseAmount * currencyRate
-                result[currencyKey] = formatter.string(for: convertedValue)
+                result[currencyKey] = convertedValue
             }
         }
     }

@@ -14,11 +14,6 @@ enum NetworkServiceError: Error {
     case generic(Error)
 }
 
-protocol NetworkCancellable {
-    mutating func cancel()
-    func isCancelled() -> Bool
-}
-
 protocol NetworkService {
     func requestTask<T: ApiTask>(endpoint: T) -> FetchResult<T.Response>
 }
@@ -47,18 +42,6 @@ struct DefaultNetworkService {
     ) {
         self.config = config
         self.sessionManager = sessionManager
-    }
-}
-
-struct CancellationToken: NetworkCancellable {
-    private var internalIsCancelled: Bool = false
-
-    mutating func cancel() {
-        internalIsCancelled = true
-    }
-
-    func isCancelled() -> Bool {
-        internalIsCancelled
     }
 }
 

@@ -1,13 +1,20 @@
 import UIKit
 
+enum ResetType {
+    case initialized
+    case withDecimal(Decimal)
+    case withInteger(Int)
+}
+
 protocol NumericKeyboardInterface {
-    var currentValue: String { get set }
-    func reset()
+    var currentValue: String? { get set }
+    func reset(_: ResetType)
 }
 
 enum KeyboardInputError: Error {
     case maxLimit
     case emptyDelete
+    case maximumFractionDigits
 }
 
 @MainActor
@@ -20,10 +27,14 @@ final class KeyboardInputHandler {
 
     var state: State = .initial
     var displayedText: String = ""
+    let maxInput: Int
+    let maximumFractionDigits: Int
 
-    init(state: State, displayedText: String) {
+    init(state: State, displayedText: String, maxInput: Int, maximumFractionDigits: Int) {
         self.state = state
         self.displayedText = displayedText
+        self.maxInput = maxInput
+        self.maximumFractionDigits = maximumFractionDigits
     }
 
     func handleInput(_ input: String) throws {
@@ -45,13 +56,18 @@ final class KeyboardInputHandler {
             displayedText = input != "0" ? input : "0"
             state = .numberInput
         case .numberInput:
-            if !(displayedText == "0" && input == "0") {
-                guard !isGreaterThanIntMax(string: displayedText + input) else {
-                    throw KeyboardInputError.maxLimit
-                }
-                displayedText += input
+            guard displayedText != "0" else {
+                displayedText = input
+                return
             }
+            guard !isGreaterThanMax(string: displayedText + input) else {
+                throw KeyboardInputError.maxLimit
+            }
+            displayedText += input
         case .decimalInput:
+            guard !isGreaterThanMaximumFractionDigits() else {
+                throw KeyboardInputError.maximumFractionDigits
+            }
             displayedText += input
         }
     }
@@ -68,13 +84,11 @@ final class KeyboardInputHandler {
     }
 
     private func handleDeleteInput() throws {
-        guard !displayedText.isEmpty else {
+        guard !displayedText.isEmpty && displayedText != "0" else {
             throw KeyboardInputError.emptyDelete
         }
+
         displayedText.removeLast()
-        if displayedText.last == "." {
-            displayedText.removeLast()
-        }
         if displayedText.isEmpty {
             state = .initial
             displayedText = ""
@@ -85,58 +99,59 @@ final class KeyboardInputHandler {
         }
     }
 
-    private func isGreaterThanIntMax(string: String) -> Bool {
+    private func isGreaterThanMax(string: String) -> Bool {
         guard let number = Decimal(string: string) else {
-            return false
+            fatalError("please check input")
         }
 
-        let intMaxDecimal = Decimal(Int.max)
+        let intMaxDecimal = Decimal(maxInput)
         return number > intMaxDecimal
+    }
+
+    private func isGreaterThanMaximumFractionDigits() -> Bool {
+        guard let decimal = Decimal(string: displayedText) else {
+            fatalError("please check input")
+        }
+        let decimalFractionDigits = max(0, -decimal.exponent)
+        return decimalFractionDigits >= maximumFractionDigits
     }
 }
 
 @MainActor
 final class NumericKeyboard: UIView {
-    var currentValue: String = "" {
-        didSet {
-            if let _ = Int(currentValue) {
-                inputHandler = KeyboardInputHandler(
-                    state: .numberInput,
-                    displayedText: currentValue
-                )
-            } else if let _ = Double(currentValue), currentValue.contains(".") {
-                inputHandler = KeyboardInputHandler(
-                    state: .decimalInput,
-                    displayedText: currentValue
-                )
-            } else {
-                inputHandler = KeyboardInputHandler(state: .initial, displayedText: "")
-            }
-        }
-    }
+    var currentValue: String?
 
-    var inputHandler = KeyboardInputHandler(state: .initial, displayedText: "")
-    let buttonsLayout = [
+    private var inputHandler: KeyboardInputHandler
+    private let buttonsLayout = [
         ["7", "8", "9"],
         ["4", "5", "6"],
         ["1", "2", "3"],
         [".", "0", "-"],
     ]
-    var buttons: [String: UIButton] = [:]
-    let inputCallback: (String) -> Void
-    let triggerMaxLimit: () -> Void
-    let triggerDeleteAlert: () -> Void
+    private var buttons: [String: UIButton] = [:]
+    private let inputCallback: (String?) -> Void
+    private let onLimitedRuleInvoked: (KeyboardInputError) -> Void
 
-    let gap: CGFloat = 0.5
+    private let gap: CGFloat = 0.5
+    private let maxInput: Int
+    private let maximumFractionDigits: Int
 
     init(
-        inputCallback: @escaping (String) -> Void,
-        triggerMaxLimit: @escaping () -> Void,
-        triggerDeleteAlert: @escaping () -> Void
+        maxInput: Int,
+        maximumFractionDigits: Int,
+        inputCallback: @escaping (String?) -> Void,
+        onLimitedRuleInvoked: @escaping (KeyboardInputError) -> Void
     ) {
+        self.maxInput = maxInput
+        self.maximumFractionDigits = maximumFractionDigits
         self.inputCallback = inputCallback
-        self.triggerMaxLimit = triggerMaxLimit
-        self.triggerDeleteAlert = triggerDeleteAlert
+        self.onLimitedRuleInvoked = onLimitedRuleInvoked
+        inputHandler = KeyboardInputHandler(
+            state: .initial,
+            displayedText: "",
+            maxInput: maxInput,
+            maximumFractionDigits: maximumFractionDigits
+        )
         super.init(frame: .zero)
         backgroundColor = UIColor(named: "PrimaryKeyboardMarginColor")
         setupButtons()
@@ -199,22 +214,17 @@ final class NumericKeyboard: UIView {
 
     @objc private func keyPressed(_ sender: UIButton) {
         guard let key = buttons.first(where: { $0.value == sender })?.key else { return }
-        let oldDisplayedText = inputHandler.displayedText
+        let oldDisplayedText = currentValue
         do {
             try inputHandler.handleInput(key)
-            let newDisplayedText = inputHandler.displayedText
+            let newDisplayedText = inputHandler.displayedText.isEmpty ? nil : inputHandler.displayedText
             guard oldDisplayedText != newDisplayedText else {
                 return
             }
             currentValue = newDisplayedText
-            inputCallback(inputHandler.displayedText)
+            inputCallback(newDisplayedText)
         } catch let error as KeyboardInputError {
-            switch error {
-            case .maxLimit:
-                triggerMaxLimit()
-            case .emptyDelete:
-                triggerDeleteAlert()
-            }
+            onLimitedRuleInvoked(error)
         } catch {
             fatalError("shouldn't happen in NumericKeyboard")
         }
@@ -222,8 +232,38 @@ final class NumericKeyboard: UIView {
 }
 
 extension NumericKeyboard: NumericKeyboardInterface {
-    func reset() {
-        currentValue = ""
+    func reset(_ type: ResetType) {
+        switch type {
+        case .initialized:
+            currentValue = nil
+            inputHandler = KeyboardInputHandler(
+                state: .initial,
+                displayedText: "",
+                maxInput: maxInput,
+                maximumFractionDigits: maximumFractionDigits
+            )
+        case let .withDecimal(value):
+            guard value.exponent < 0 else {
+                fatalError("please input  a decimal number")
+            }
+            let resetValue = "\(value)"
+            currentValue = resetValue
+            inputHandler = KeyboardInputHandler(
+                state: .decimalInput,
+                displayedText: resetValue,
+                maxInput: maxInput,
+                maximumFractionDigits: maximumFractionDigits
+            )
+        case let .withInteger(value):
+            let resetValue = "\(value)"
+            currentValue = resetValue
+            inputHandler = KeyboardInputHandler(
+                state: .numberInput,
+                displayedText: resetValue,
+                maxInput: maxInput,
+                maximumFractionDigits: maximumFractionDigits
+            )
+        }
     }
 }
 
