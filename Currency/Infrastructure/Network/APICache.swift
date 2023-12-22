@@ -33,6 +33,7 @@ final class DefaultAPICache: APICache {
     var maxCacheAge: TimeInterval
     var maxMemoryCost: Int
     var maxCacheSize: Int
+    var generatePath : ((String) -> URL)?
 
     private let memCache: NSCache<NSString, CacheWrapper<Any>>
     private let diskCachePath: URL
@@ -61,18 +62,18 @@ final class DefaultAPICache: APICache {
         self.memCache.name = namespace
         self.diskEncoder = diskEncoder
         self.diskDecoder = diskDecoder
-        self.diskCachePath = diskCachePath.appendingPathComponent(namespace)
+        self.diskCachePath = diskCachePath
         self.fileManager = fileManager
         self.ioQueue = ioQueue
-        prepareDirectory()
     }
 
-    private func prepareDirectory() {
-        guard !fileManager.fileExists(atPath: diskCachePath.path) else { return }
+    private func prepareDirectoryIfNeeded(desPathURL: URL) {
+        let fileDirectoryPath = desPathURL.deletingLastPathComponent().path(percentEncoded: true)
+        guard !fileManager.fileExists(atPath: fileDirectoryPath) else { return }
 
         do {
             try fileManager.createDirectory(
-                atPath: diskCachePath.path,
+                atPath: fileDirectoryPath,
                 withIntermediateDirectories: true,
                 attributes: nil
             )
@@ -82,7 +83,10 @@ final class DefaultAPICache: APICache {
     }
 
     private func diskPath(key: String) -> URL {
-        diskCachePath.appendingPathComponent(key)
+        guard let generatePath = self.generatePath else {
+            return diskCachePath.appendingPathComponent(namespace).appendingPathComponent(key)
+        }
+        return generatePath(key)
     }
 
     func convenienceStore(with response: some Codable, key: String) {
@@ -96,9 +100,9 @@ final class DefaultAPICache: APICache {
 
     func storeResponseToDisk(with response: some Codable, key: String) {
         let diskPath = diskPath(key: key)
+        prepareDirectoryIfNeeded(desPathURL: diskPath)
         ioQueue.async {
             do {
-                print("start print write data")
                 let encodedData = try self.diskEncoder.encode(response)
                 try encodedData.write(to: diskPath, options: .atomic)
             } catch {

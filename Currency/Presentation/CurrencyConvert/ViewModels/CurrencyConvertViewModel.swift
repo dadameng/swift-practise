@@ -139,12 +139,14 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
                 internalLoadLatestError = "canceld"
             case .decodeError:
                 internalLoadLatestError = "invalid data, please contact the custom service"
-            case .noResponse:
-                internalLoadLatestError = "no contents"
+            case .invalidData:
+                internalLoadLatestError = "no valid contents"
             case .notConnected:
                 internalLoadLatestError = "please check your network"
             case let .error(statusCode, _):
                 internalLoadLatestError = "reponse error code : \(statusCode)"
+            case .notHttpResponse:
+                internalLoadLatestError = "please make sure you are sending http request"
             }
         }
         failureSubject.send(.requestFailure(internalLoadLatestError))
@@ -191,7 +193,7 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
 
     func didTriggerRefresh() {
         isRequesting = true
-        dependencies.useCase.refreshLatestCurrency()
+        dependencies.useCase.refreshCurrency()
     }
 
     func willChangeItem(_: String) {}

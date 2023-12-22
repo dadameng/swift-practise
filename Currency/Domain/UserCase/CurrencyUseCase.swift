@@ -17,7 +17,7 @@ protocol CurrencyUseCase {
     var currentCurrency: Currency { get }
     var convertResults: [Currency: Decimal] { get }
     func updateSelectedSymbols(_ symbols: [Currency])
-    func refreshLatestCurrency()
+    func refreshCurrency()
     func loadCurrency()
     func convertCurrency(from: Currency, value: Decimal)
     func cancelRequestLatestCurrency()
@@ -75,7 +75,7 @@ extension CurrencyConvertUseCaseImp: CurrencyUseCase {
         useCaseOutput?.didUpdateConvertResults(convertResults)
     }
 
-    func refreshLatestCurrency() {
+    func refreshCurrency() {
         let task = currencyRepository.fetchLatestCurrencys()
         executeCurrencyTask(task, withInitialValue: currentCurrencyValue)
     }

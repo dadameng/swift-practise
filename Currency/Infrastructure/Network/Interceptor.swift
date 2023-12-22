@@ -7,11 +7,11 @@ enum InterceptorResult<T> {
 
 typealias RequestInterceptorResult<T> = (processedRequest: URLRequest, result: InterceptorResult<T>)
 protocol RequestInterceptor {
-    func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request: T) async -> RequestInterceptorResult<T.Response>
+    func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request: T)  -> RequestInterceptorResult<T.Response>
 }
 
 extension RequestInterceptor {
-    func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request _: T) async -> RequestInterceptorResult<T.Response> {
+    func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request _: T)  -> RequestInterceptorResult<T.Response> {
         (sourceURLRequest, .continueProcessing)
     }
 }
@@ -46,7 +46,7 @@ final class CacheInterceptor {
 }
 
 extension CacheInterceptor: NetworkInterceptor {
-    func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request: T) async -> RequestInterceptorResult<T.Response> {
+    func processAfterGenerateRequest<T: ApiTask>(on sourceURLRequest: URLRequest, request: T) -> RequestInterceptorResult<T.Response> {
         let requestKey = request.uniqueKey
 
         // Retrieve ETag and Date from cache

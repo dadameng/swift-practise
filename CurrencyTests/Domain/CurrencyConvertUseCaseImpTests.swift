@@ -2,14 +2,14 @@
 import XCTest
 
 final class CurrencyConvertUseCaseImpTests: XCTestCase {
-
     class MockCurrencyRepository: CurrencyRepository {
         var fetchCurrencysLatestCalled = false
+        var fetchCurrencysCalled = false
         var mockExchangeData: ExchangeData?
         var mockError: Error?
 
-        func fetchCurrencysLatest() -> Task<ExchangeData, Error> {
-            fetchCurrencysLatestCalled = true
+        func fetchCurrencys() -> FetchResult<ExchangeData> {
+            fetchCurrencysCalled = true
 
             let task = Task<ExchangeData, Error> {
                 if let data = mockExchangeData {
@@ -17,14 +17,28 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
                 } else if let error = mockError {
                     throw error
                 } else {
-                    throw NetworkServiceError.responseFailure(.noResponse)
+                    throw NetworkServiceError.responseFailure(.invalidData)
+                }
+            }
+
+            return task
+        }
+
+        func fetchLatestCurrencys() -> FetchResult<ExchangeData> {
+            fetchCurrencysLatestCalled = true
+            let task = Task<ExchangeData, Error> {
+                if let data = mockExchangeData {
+                    return data
+                } else if let error = mockError {
+                    throw error
+                } else {
+                    throw NetworkServiceError.responseFailure(.invalidData)
                 }
             }
 
             return task
         }
     }
-
 
     class MockUseCaseOutput: CurrencyUseCaseCallback {
         var updateSelectedSymbolsCalled = false
@@ -96,11 +110,12 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             expectation.fulfill()
         }
 
-        useCase.loadLatestCurrency()
+        useCase.loadCurrency()
 
         wait(for: [expectation], timeout: 3.0)
 
-        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysLatestCalled)
+        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysCalled)
+        XCTAssertFalse(mockCurrencyRepository.fetchCurrencysLatestCalled)
         XCTAssertTrue(mockUseCaseOutput.loadSuccessCalled)
         XCTAssertFalse(mockUseCaseOutput.loadFailureCalled)
         XCTAssertEqual(useCase.latestTimestamp, 123_123_123)
@@ -114,14 +129,15 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
         mockUseCaseOutput.loadFailureHandler = {
             expectation.fulfill()
         }
-        useCase.loadLatestCurrency()
+        useCase.loadCurrency()
 
         wait(for: [expectation], timeout: 3.0)
 
-        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysLatestCalled)
+        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysCalled)
+        XCTAssertFalse(mockCurrencyRepository.fetchCurrencysLatestCalled)
         XCTAssertTrue(mockUseCaseOutput.loadFailureCalled)
         XCTAssertFalse(mockUseCaseOutput.loadSuccessCalled)
-        XCTAssertEqual(useCase.convertResults, [:])
+        XCTAssertEqual(useCase.convertResults, [.JPY: Decimal(0), .USD: Decimal(0)])
         XCTAssertEqual(mockUseCaseOutput.mockConvertResults.count, 0)
     }
 
@@ -135,7 +151,7 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             expectation.fulfill()
         }
 
-        useCase.loadLatestCurrency()
+        useCase.loadCurrency()
 
         wait(for: [expectation], timeout: 3.0)
 
@@ -163,7 +179,7 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             expectation.fulfill()
         }
 
-        useCase.loadLatestCurrency()
+        useCase.loadCurrency()
 
         wait(for: [expectation], timeout: 3.0)
 
@@ -183,7 +199,7 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             expectation.fulfill()
         }
 
-        useCase.loadLatestCurrency()
+        useCase.loadCurrency()
         useCase.cancelRequestLatestCurrency()
 
         wait(for: [expectation], timeout: 3.0)
@@ -191,5 +207,26 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
         XCTAssertTrue(mockUseCaseOutput.loadFailureCalled)
         XCTAssertFalse(mockUseCaseOutput.loadSuccessCalled)
         XCTAssertEqual(mockUseCaseOutput.loadFailureError?.localizedDescription, NetworkServiceError.responseFailure(.cancelled).localizedDescription)
+    }
+
+    func testRefreshLoad_whenRefresh_thenLatestBellCalled() {
+        var mockExchangeData = ExchangeData(disclaimer: "", license: "", timestamp: 123_123_123, base: "USD")
+        mockExchangeData.rates = [.JPY: 150, .USD: 1]
+        mockCurrencyRepository.mockExchangeData = mockExchangeData
+
+        let expectation = XCTestExpectation(description: "loadLatestCurrency completes")
+
+        mockUseCaseOutput.loadSuccessHandler = {
+            expectation.fulfill()
+        }
+
+        useCase.refreshCurrency()
+
+        wait(for: [expectation], timeout: 3.0)
+
+        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysLatestCalled)
+        XCTAssertFalse(mockCurrencyRepository.fetchCurrencysCalled)
+        XCTAssertTrue(mockUseCaseOutput.loadSuccessCalled)
+        XCTAssertFalse(mockUseCaseOutput.loadFailureCalled)
     }
 }

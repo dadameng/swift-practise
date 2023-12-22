@@ -1,11 +1,12 @@
 import Foundation
 
 enum ResponseError: Error {
-    case noResponse
     case notConnected
     case cancelled
     case error(statusCode: Int, data: Data?)
-    case decodeError
+    case decodeError(originalError: DecodingError)
+    case notHttpResponse
+    case invalidData
 }
 
 enum NetworkServiceError: Error {
@@ -58,7 +59,7 @@ extension DefaultNetworkService: NetworkService {
                 let requestInterceptors = config.commonRequestInterceptors + endpoint.requestInterceptors
 
                 for interceptor in requestInterceptors {
-                    let (processedRequest, result) = await interceptor.processAfterGenerateRequest(on: request, request: endpoint)
+                    let (processedRequest, result) = interceptor.processAfterGenerateRequest(on: request, request: endpoint)
                     request = processedRequest
                     if case let .stopProcessing(decodedResponse) = result {
                         return decodedResponse
@@ -70,7 +71,11 @@ extension DefaultNetworkService: NetworkService {
                     throw NetworkServiceError.responseFailure(.cancelled)
                 }
                 guard let httpResponse = response as? HTTPURLResponse else {
-                    throw NetworkServiceError.responseFailure(.noResponse)
+                    throw NetworkServiceError.responseFailure(.notHttpResponse)
+                }
+                
+                guard !data.isEmpty else {
+                    throw NetworkServiceError.responseFailure(.invalidData)
                 }
 
                 let responseInterceptors = config.commonResponseInterceptors + endpoint.responseInterceptors
@@ -106,8 +111,14 @@ extension DefaultNetworkService: NetworkService {
                 default:
                     throw NetworkServiceError.generic(urlError)
                 }
+            } catch let wrappedError as NetworkServiceError {
+                throw wrappedError
             } catch let requestError as RequestGenerationError {
                 throw NetworkServiceError.requestFailure(requestError)
+            } catch _ as CancellationError {
+                throw NetworkServiceError.responseFailure(.cancelled)
+            } catch let decodingError as DecodingError {
+                throw NetworkServiceError.responseFailure(.decodeError(originalError: decodingError))
             } catch {
                 print("error \(error)")
                 throw NetworkServiceError.generic(error)

@@ -49,6 +49,9 @@
 		B472608F2B32FE140020D34F /* CurrencyConvertViewModelImpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B472608E2B32FE140020D34F /* CurrencyConvertViewModelImpTests.swift */; };
 		B47260912B32FE360020D34F /* CurrencyListViewModelImpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47260902B32FE360020D34F /* CurrencyListViewModelImpTests.swift */; };
 		B47260932B33060A0020D34F /* CurrencyConvertUseCaseImpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47260922B33060A0020D34F /* CurrencyConvertUseCaseImpTests.swift */; };
+		B47260962B352A250020D34F /* NetworkServiceImpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47260952B352A250020D34F /* NetworkServiceImpTests.swift */; };
+		B47260982B357EA60020D34F /* APIRequestTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47260972B357EA60020D34F /* APIRequestTest.swift */; };
+		B472609A2B358B740020D34F /* APICacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B47260992B358B740020D34F /* APICacheTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -107,6 +110,9 @@
 		B472608E2B32FE140020D34F /* CurrencyConvertViewModelImpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyConvertViewModelImpTests.swift; sourceTree = "<group>"; };
 		B47260902B32FE360020D34F /* CurrencyListViewModelImpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyListViewModelImpTests.swift; sourceTree = "<group>"; };
 		B47260922B33060A0020D34F /* CurrencyConvertUseCaseImpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrencyConvertUseCaseImpTests.swift; sourceTree = "<group>"; };
+		B47260952B352A250020D34F /* NetworkServiceImpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkServiceImpTests.swift; sourceTree = "<group>"; };
+		B47260972B357EA60020D34F /* APIRequestTest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIRequestTest.swift; sourceTree = "<group>"; };
+		B47260992B358B740020D34F /* APICacheTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APICacheTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -165,6 +171,7 @@
 		B47260162B32EC1B0020D34F /* CurrencyTests */ = {
 			isa = PBXGroup;
 			children = (
+				B47260942B3529DC0020D34F /* Infrastructure */,
 				B47260892B32FD9C0020D34F /* Domain */,
 				B47260882B32FD930020D34F /* Presentation */,
 			);
@@ -410,6 +417,16 @@
 			path = ViewModels;
 			sourceTree = "<group>";
 		};
+		B47260942B3529DC0020D34F /* Infrastructure */ = {
+			isa = PBXGroup;
+			children = (
+				B47260952B352A250020D34F /* NetworkServiceImpTests.swift */,
+				B47260972B357EA60020D34F /* APIRequestTest.swift */,
+				B47260992B358B740020D34F /* APICacheTests.swift */,
+			);
+			path = Infrastructure;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -553,10 +570,13 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B47260962B352A250020D34F /* NetworkServiceImpTests.swift in Sources */,
 				B472608C2B32FDCF0020D34F /* NumericKeyboardTests.swift in Sources */,
+				B47260982B357EA60020D34F /* APIRequestTest.swift in Sources */,
 				B47260932B33060A0020D34F /* CurrencyConvertUseCaseImpTests.swift in Sources */,
 				B47260912B32FE360020D34F /* CurrencyListViewModelImpTests.swift in Sources */,
 				B472608F2B32FE140020D34F /* CurrencyConvertViewModelImpTests.swift in Sources */,
+				B472609A2B358B740020D34F /* APICacheTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

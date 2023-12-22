@@ -1,3 +1,4 @@
+import Combine
 @testable import Currency
 import XCTest
 
@@ -12,9 +13,10 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
         var currentCurrency = Currency.USD
 
         var selectedSymbols: [Currency] = [.USD, .JPY]
-        var convertResults: [Currency: Decimal] = [:]
+        var convertResults: [Currency: Decimal] = [.USD : Decimal(1), .JPY : Decimal(0)]
 
         var loadLatestCurrencyCalled = false
+        var loadCurrcyCalled = false
         var convertCurrencyCalled = false
         var updateSelectedSymbolsCalled = false
         var lastConvertedCurrency: Currency?
@@ -24,10 +26,18 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
             updateSelectedSymbolsCalled = true
         }
 
-        func loadLatestCurrency() {
+        func refreshCurrency() {
             loadLatestCurrencyCalled = true
-            DispatchQueue.global().async {
-                self.convertResults = [.USD: Decimal(1.0), .EUR: Decimal(0.9)]
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.convertResults = [.USD: Decimal(1.0), .JPY: Decimal(0.9)]
+                self.useCaseOutput?.didLoadSuccess(self.convertResults)
+            }
+        }
+
+        func loadCurrency() {
+            loadCurrcyCalled = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                self.convertResults = [.USD: Decimal(1.0), .JPY: Decimal(0.9)]
                 self.useCaseOutput?.didLoadSuccess(self.convertResults)
             }
         }
@@ -43,7 +53,14 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
         func cancelRequestLatestCurrency() {}
     }
 
-    func testDidUpdateAmount() {
+    enum RequestState {
+        case initial
+        case requesting
+        case completed
+    }
+    var cancellables: Set<AnyCancellable> = []
+
+    func testDidUpdateAmount_whenLoaded_thenGetCurrencyResultList() {
         let mockUseCase = MockCurrencyUseCase()
         let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
         let amount = "100"
@@ -60,7 +77,7 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
         XCTAssertEqual(viewModel.itemViewModels[1].selected, false)
     }
 
-    func testDidTriggerRefresh() {
+    func testDidTriggerRefresh_whenRefresh_thenRefreshCalled() {
         let mockUseCase = MockCurrencyUseCase()
         let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
 
@@ -69,7 +86,7 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
         XCTAssertTrue(mockUseCase.loadLatestCurrencyCalled, "Load latest currency should be called")
     }
 
-    func testDidSelectItem() {
+    func testDidSelectItem_whenChangeItem_thenSelectedIndexChanged() {
         let mockUseCase = MockCurrencyUseCase()
         let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
         let newIndex = 1
@@ -80,7 +97,7 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
         XCTAssertEqual(mockUseCase.currentCurrencyValue, mockUseCase.initialCurrencyValue, "Should call convertCurrency with initial value")
     }
 
-    func testLastTimeString() {
+    func testLastTimeString_whenRequestFinish_thenShowRequestSuccessTime() {
         let mockUseCase = MockCurrencyUseCase()
         let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
 
@@ -88,7 +105,7 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
         XCTAssertEqual(viewModel.lastTimeString, expectedDateString, "The lastTimeString should match the formatted date string")
     }
 
-    func testDidInputValidValue() {
+    func testDidInputValidValue_whenInputInvalid_thenTriggerViewModelUpdate() {
         let mockUseCase = MockCurrencyUseCase()
         let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
         mockUseCase.useCaseOutput = viewModel
@@ -96,12 +113,11 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
 
         XCTAssertEqual(viewModel.itemViewModels[0].hasValidInput, false)
         viewModel.didInputValidValue()
-        // need trigger itemviewmodels update method
         mockUseCase.useCaseOutput?.didUpdateConvertResults([.USD: Decimal(5), .JPY: Decimal(150)])
         XCTAssertEqual(viewModel.itemViewModels[0].hasValidInput, true)
     }
 
-    func testDidResetInput() {
+    func testDidResetInput_whenInputInvalid_thenTriggerViewModelUpdate() {
         let mockUseCase = MockCurrencyUseCase()
         let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
         mockUseCase.useCaseOutput = viewModel
@@ -110,8 +126,71 @@ final class CurrencyConvertViewModelImpTests: XCTestCase {
 
         XCTAssertEqual(viewModel.itemViewModels[0].hasValidInput, true)
         viewModel.didResetInput()
-        // need trigger itemviewmodels update method
         mockUseCase.useCaseOutput?.didUpdateConvertResults([.USD: Decimal(5), .JPY: Decimal(150)])
         XCTAssertEqual(viewModel.itemViewModels[0].hasValidInput, false)
+    }
+
+    func testLoadingStatus_whenLoadCurrency_thenLoadingStatusChanged() {
+        let mockUseCase = MockCurrencyUseCase()
+        let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
+        mockUseCase.useCaseOutput = viewModel
+
+        let firstStateChangeExpectation = XCTestExpectation(description: "First state change")
+        let revertedStateChangeExpectation = XCTestExpectation(description: "Reverted state change")
+        var requestState = RequestState.initial
+        viewModel.isRequestingPublisher
+            .sink { isRequesting in
+                switch requestState {
+                case .initial where isRequesting:
+                    requestState = .requesting
+                    firstStateChangeExpectation.fulfill()
+                case .requesting where !isRequesting:
+                    requestState = .completed
+                    revertedStateChangeExpectation.fulfill()
+                default:
+                    break
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.viewDidLoad(viewController: UIViewController())
+
+        wait(for: [firstStateChangeExpectation, revertedStateChangeExpectation], timeout: 3.0)
+    }
+    
+    func testItemViewModelsPublisher_whenLoadCurrency_thenItemViewModelsGetCorrectReuslt() {
+        let mockUseCase = MockCurrencyUseCase()
+        let viewModel = CurrencyConvertViewModelImp(selectedIndex: 0, dependencies: .init(useCase: mockUseCase))
+        mockUseCase.useCaseOutput = viewModel
+        let expectation = XCTestExpectation(description: "Publisher should emit updated item view models")
+        var receivedInitialValue = false
+
+        viewModel.itemViewModelsPublisher
+            .sink { result in
+                switch result {
+                case .success(let itemViewModels):
+                    if !receivedInitialValue {
+                        XCTAssertEqual(itemViewModels.count, 2)
+                        XCTAssertEqual(itemViewModels[0].title, Currency.USD.rawValue)
+                        XCTAssertEqual(itemViewModels[0].valueString, "1")
+                        XCTAssertEqual(itemViewModels[1].title, Currency.JPY.rawValue)
+                        XCTAssertEqual(itemViewModels[1].valueString, "0")
+                        receivedInitialValue = true
+                    } else {
+                        XCTAssertEqual(itemViewModels.count, 2)
+                        XCTAssertEqual(itemViewModels[0].title, Currency.USD.rawValue)
+                        XCTAssertEqual(itemViewModels[0].valueString, "1")
+                        XCTAssertEqual(itemViewModels[1].title, Currency.JPY.rawValue)
+                        XCTAssertEqual(itemViewModels[1].valueString, "0.9")
+                        expectation.fulfill()
+                    }
+                case .failure(let error):
+                    XCTFail("Unexpected error: \(error)")
+                }
+            }
+            .store(in: &cancellables)
+
+        viewModel.viewDidLoad(viewController: UIViewController())
+        wait(for: [expectation], timeout: 3.0)
     }
 }

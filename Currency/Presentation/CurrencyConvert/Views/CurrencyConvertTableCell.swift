@@ -82,7 +82,6 @@ final class CurrencyConvertTableCell: UITableViewCell {
     override func prepareForReuse() {
         super.prepareForReuse()
         removeShimmerAnimation()
-        print("prepareForReuse")
     }
 
     // MARK: - UI setup
@@ -150,7 +149,6 @@ final class CurrencyConvertTableCell: UITableViewCell {
 
 extension CurrencyConvertTableCell: CurrencyConvertTableCellInterface {
     func updateCell(with viewModel: CurrencyConvertItemViewModel) {
-        print("updateCell text: \(viewModel.valueString) title : \(viewModel.title)")
         self.viewModel = viewModel
         flagImageView.image = UIImage(named: viewModel.imageName)
         currencyTitleLabel.text = viewModel.title

@@ -85,7 +85,7 @@ extension Requestable {
 
         guard var urlComponents = URLComponents(
             string: endpoint
-        ) else { throw RequestGenerationError.invalidURL }
+        ), endpoint.isValidURL else { throw RequestGenerationError.invalidURL }
         var urlQueryItems = [URLQueryItem]()
 
         let queryParameters = try queryParametersEncodable?.toDictionary() ?? queryParameters
@@ -238,5 +238,17 @@ private extension Encodable {
         let data = try JSONEncoder().encode(self)
         let jsonData = try JSONSerialization.jsonObject(with: data)
         return jsonData as? [String: Any]
+    }
+}
+
+private extension String {
+    var isValidURL: Bool {
+        let detector = try! NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        if let match = detector.firstMatch(in: self, options: [], range: NSRange(location: 0, length: self.utf16.count)) {
+            // it is a link, if the match covers the whole string
+            return match.range.length == self.utf16.count
+        } else {
+            return false
+        }
     }
 }
