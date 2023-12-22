@@ -164,7 +164,7 @@ final class NumericKeyboard: UIView {
             maximumFractionDigits: maximumFractionDigits
         )
         super.init(frame: .zero)
-        backgroundColor = UIColor(named: "PrimaryKeyboardMarginColor")
+        backgroundColor = AppColor.primaryKeyboardMargin.color
         setupButtons()
     }
 
@@ -204,8 +204,8 @@ final class NumericKeyboard: UIView {
 
     private func createButton(title: String) -> UIButton {
         let button = UIButton(type: .system)
-        let backgroundColor = UIColor(named: "PrimaryKeyboardBgColor")!
-        let titleColor = UIColor(named: "PrimaryKeyboardTitleColor")!
+        let backgroundColor = AppColor.primaryKeyboardBg.color
+        let titleColor = AppColor.primaryKeyboardTitle.color
 
         button.setBackgroundColor(backgroundColor, forState: .normal)
         button.setBackgroundColor(backgroundColor.withAlphaComponent(0.8), forState: .highlighted)

@@ -109,7 +109,7 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
             )
             completionHandler(true)
         }
-        action.backgroundColor = UIColor(red: 99 / 255.0, green: 223 / 255.0, blue: 193 / 255.0, alpha: 1)
+        action.backgroundColor = AppColor.alterCurrencyActionBg.color
 
         let configuration = UISwipeActionsConfiguration(actions: [action])
         return configuration

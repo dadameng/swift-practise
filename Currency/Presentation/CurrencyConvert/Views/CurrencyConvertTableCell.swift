@@ -19,14 +19,14 @@ final class CurrencyConvertTableCell: UITableViewCell {
     private let currencyTitleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 16, weight: .medium)
-        label.textColor = UIColor(named: "PrimaryCellTitleColor")
+        label.textColor = AppColor.primaryCellTitle.color
         return label
     }()
 
     private let currencyValueLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 22, weight: .bold)
-        label.textColor = UIColor(named: "SecondCellTextColor")
+        label.textColor = AppColor.secondCellText.color
         label.textAlignment = .right
         label.contentMode = .right
         return label
@@ -35,7 +35,7 @@ final class CurrencyConvertTableCell: UITableViewCell {
     private let currencyNameLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.systemFont(ofSize: 12, weight: .regular)
-        label.textColor = UIColor(named: "SecondCellTextColor")
+        label.textColor = AppColor.secondCellText.color
         return label
     }()
 
@@ -46,7 +46,7 @@ final class CurrencyConvertTableCell: UITableViewCell {
     }()
 
     private let cursor: BlinkingCursor = {
-        let cursor = BlinkingCursor(cursorColor: .red)
+        let cursor = BlinkingCursor(cursorColor: AppColor.cursor.color)
         cursor.isHidden = true
         return cursor
     }()
@@ -64,7 +64,7 @@ final class CurrencyConvertTableCell: UITableViewCell {
     private let viewsSpace = 20.0
     private let imageViewSize = CGSize(width: 48, height: 32)
     private let titleLabelWidth = 40.0
-    private let valuePlaceholderColor = UIColor(named: "SecondCellTextColor")
+    private let valuePlaceholderColor = AppColor.secondCellText.color
 
     // MARK: override
 
@@ -154,7 +154,7 @@ extension CurrencyConvertTableCell: CurrencyConvertTableCellInterface {
         currencyTitleLabel.text = viewModel.title
         currencyNameLabel.text = viewModel.currencyName
         currencyValueLabel.text = viewModel.valueString
-        contentView.backgroundColor = viewModel.selected ? UIColor(named: "PrimaryCellSelectedBgColor")! : UIColor(named: "PrimaryCellBgColor")
+        contentView.backgroundColor = viewModel.selected ? AppColor.primaryCellSelectedBg.color : AppColor.primaryCellBg.color
         currencyValueLabel.textColor = viewModel.hasValidInput ? .black : valuePlaceholderColor
         cursor.isHidden = !viewModel.selected
         if viewModel.selected {
