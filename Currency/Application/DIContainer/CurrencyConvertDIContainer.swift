@@ -11,16 +11,16 @@ final class CurrencyConvertDIContainerImp {
         unowned let appDIContainer: AppDIContainer
     }
 
-    enum CacheConfiguration {
+    private enum CacheConfiguration {
         static let maxCacheAge = 60 * 60 * 24 * 7 // 1week
         static let maxMemoryCost = 10 * 1024 * 1024 // 10MB
         static let maxCacheSize = 20 * 1024 * 1024 // 20MB
     }
 
-    private let initialSelectedSymbols: [Currency] = [.USD, .JPY, .CNY, .HKD, .TWD]
+    private static let initialSelectedSymbols: [Currency] = [.USD, .JPY, .CNY, .HKD, .TWD]
+    private static let initialCurrencyValue = Decimal(100)
 
     private let dependencies: Dependencies
-    private let initialCurrencyValue = Decimal(100)
 
     init(dependencies: Dependencies) {
         self.dependencies = dependencies
@@ -39,19 +39,20 @@ final class CurrencyConvertDIContainerImp {
 
     func makeCurrencyConvertRepository(_ apiService: NetworkService) -> CurrencyRepository {
         let cache = makeCurrencyConvertAPICache()
+        let endpointsFactory = CurrencyModuleGenerator(dependencies: .init(networkInterceptor: [CacheInterceptor(cache: cache)]))
         return CurrencyRepositoryImp(dependencies: .init(
             networkService: apiService,
-            networkInterceptor: [CacheInterceptor(cache: cache)],
-            apiCache: cache
+            apiCache: cache,
+            endpointsFactory: endpointsFactory
         ))
     }
 
     func makeCurrencyConvertUserCase(_ repository: CurrencyRepository) -> CurrencyUseCase {
         CurrencyConvertUseCaseImp(
             currencyRepository: repository,
-            selectedSymbols: initialSelectedSymbols,
+            selectedSymbols: CurrencyConvertDIContainerImp.initialSelectedSymbols,
             currentCurrency: .USD,
-            initialCurrencyValue: initialCurrencyValue
+            initialCurrencyValue: CurrencyConvertDIContainerImp.initialCurrencyValue
         )
     }
 

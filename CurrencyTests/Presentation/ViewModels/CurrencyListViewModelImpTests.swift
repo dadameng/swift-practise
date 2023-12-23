@@ -3,7 +3,7 @@ import XCTest
 
 @MainActor
 final class CurrencyListViewModelImpTests: XCTestCase {
-    func testCurrencyListViewModelInitialisation() {
+    func testCurrencyListViewModelInitialisation_whenInit_thenGetCorrectResults() {
         let dependencies = CurrencyListViewModelImp.Dependencies(currentSymbols: [.USD, .EUR], initialChangeIndex: 0)
         let viewModel = CurrencyListViewModelImp(dependencies: dependencies)
 
@@ -16,7 +16,7 @@ final class CurrencyListViewModelImpTests: XCTestCase {
         XCTAssertTrue(viewModel.listViewModels.contains { $0.currency == "EUR" && $0.selected }, "EUR should be marked as selected")
     }
 
-    func testDidSelectIndex() {
+    func testDidSelectIndex_whenChageIndex_thenSelectedSymbolsEqualSelectedItem() {
         let dependencies = CurrencyListViewModelImp.Dependencies(currentSymbols: [.USD, .EUR], initialChangeIndex: 0)
         let viewModel = CurrencyListViewModelImp(dependencies: dependencies)
         let selectedIndex = viewModel.allCurrencies.firstIndex(of: .JPY)!

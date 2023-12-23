@@ -2,16 +2,21 @@ import Foundation
 @propertyWrapper
 struct UserDefault<T> {
     let key: String
-    let defaultValue: T
-    var container: UserDefaults = .standard
+    var storage: UserDefaults
+    var defaultValue: T
 
     var wrappedValue: T {
         get {
-            container.object(forKey: key) as? T ?? defaultValue
+            return storage.object(forKey: key) as? T ?? defaultValue
         }
         set {
-            container.set(newValue, forKey: key)
-            container.synchronize()
+            storage.set(newValue, forKey: key)
         }
+    }
+
+    init(key: String, defaultValue: T, storage: UserDefaults = .standard) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.storage = storage
     }
 }

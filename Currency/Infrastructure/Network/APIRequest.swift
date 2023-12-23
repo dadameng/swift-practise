@@ -29,6 +29,7 @@ protocol Requestable {
     var bodyParametersEncodable: Encodable? { get }
     var bodyParameters: [String: Any] { get }
     var bodyEncoding: BodyEncoding { get }
+    var throttleInterval: TimeInterval? { get }
     var requestInterceptors: [RequestInterceptor] { get }
     var uniqueKey: String { get }
     func urlRequest(with networkConfig: NetworkConfigurable) throws -> URLRequest
@@ -183,7 +184,8 @@ struct APIEndpoint<T: Codable>: ApiTask {
     let responseDecoder: ResponseDecoder
     let endpointRequestInterceptors: [RequestInterceptor]
     let endpointResponseInterceptors: [ResponseInterceptor]
-
+    var throttleInterval: TimeInterval?
+    
     init(
         path: String,
         isFullPath: Bool = false,
@@ -196,7 +198,8 @@ struct APIEndpoint<T: Codable>: ApiTask {
         bodyEncoding: BodyEncoding = .jsonSerializationData,
         responseDecoder: ResponseDecoder = JSONResponseDecoder(),
         endpointRequestInterceptors: [RequestInterceptor] = [],
-        endpointResponseInterceptors: [ResponseInterceptor] = []
+        endpointResponseInterceptors: [ResponseInterceptor] = [],
+        throttleInterval : TimeInterval? = nil
     ) {
         self.path = path
         self.isFullPath = isFullPath
@@ -210,6 +213,7 @@ struct APIEndpoint<T: Codable>: ApiTask {
         self.responseDecoder = responseDecoder
         self.endpointRequestInterceptors = endpointRequestInterceptors
         self.endpointResponseInterceptors = endpointResponseInterceptors
+        self.throttleInterval = throttleInterval
     }
 }
 

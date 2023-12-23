@@ -5,7 +5,7 @@ import XCTest
 final class NumericKeyboardTests: XCTestCase {
     let maxInput = Int.max
     let maximumFractionDigits = 3
-    func testNumberInput() {
+    func test_whenNumberInput_thenShowNumber() {
         let handler = KeyboardInputHandler(
             state: .initial,
             displayedText: "",
@@ -16,7 +16,7 @@ final class NumericKeyboardTests: XCTestCase {
         XCTAssertEqual(handler.displayedText, "1")
     }
 
-    func testDecimalInput() {
+    func testDisplay_whenDecimalInput_thenShowDecimalNumber() {
         let handler = KeyboardInputHandler(
             state: .numberInput,
             displayedText: "1",
@@ -27,7 +27,7 @@ final class NumericKeyboardTests: XCTestCase {
         XCTAssertEqual(handler.displayedText, "1.")
     }
 
-    func testDeleteInput() {
+    func testDisPlay_whenDeleteInput_thenCorrectDisplay() {
         let handler = KeyboardInputHandler(
             state: .numberInput,
             displayedText: "12",
@@ -38,7 +38,7 @@ final class NumericKeyboardTests: XCTestCase {
         XCTAssertEqual(handler.displayedText, "1")
     }
 
-    func testInputExceedingMaxLimit() {
+    func testInput_whenExceedingMaxLimit_thenThrowError() {
         let handler = KeyboardInputHandler(
             state: .numberInput,
             displayedText: "88888888888888888888888888888888888888",
@@ -58,7 +58,7 @@ final class NumericKeyboardTests: XCTestCase {
         XCTAssertTrue(errorOccurred, "Input exceeding max limit should throw 'maxLimit' error")
     }
 
-    func testDeleteInputWhenEmpty() {
+    func testDeleteInput_whenEmpty_thenThrowError() {
         let handler = KeyboardInputHandler(
             state: .initial,
             displayedText: "",
