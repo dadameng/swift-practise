@@ -3,13 +3,13 @@ import XCTest
 
 final class CurrencyConvertUseCaseImpTests: XCTestCase {
     class MockCurrencyRepository: CurrencyRepository {
-        var fetchCurrencysLatestCalled = false
-        var fetchCurrencysCalled = false
+        var fetchCurrenciesLatestCalled = false
+        var fetchCurrenciesCalled = false
         var mockExchangeData: ExchangeData?
         var mockError: Error?
 
-        func fetchCurrencys() -> FetchResult<ExchangeData> {
-            fetchCurrencysCalled = true
+        func fetchCurrencies() -> FetchResult<ExchangeData> {
+            fetchCurrenciesCalled = true
 
             let task = Task<ExchangeData, Error> {
                 if let data = mockExchangeData {
@@ -24,8 +24,8 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
             return task
         }
 
-        func fetchLatestCurrencys() -> FetchResult<ExchangeData> {
-            fetchCurrencysLatestCalled = true
+        func fetchLatestCurrencies() -> FetchResult<ExchangeData> {
+            fetchCurrenciesLatestCalled = true
             let task = Task<ExchangeData, Error> {
                 if let data = mockExchangeData {
                     return data
@@ -114,8 +114,8 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
 
         wait(for: [expectation], timeout: 3.0)
 
-        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysCalled)
-        XCTAssertFalse(mockCurrencyRepository.fetchCurrencysLatestCalled)
+        XCTAssertTrue(mockCurrencyRepository.fetchCurrenciesCalled)
+        XCTAssertFalse(mockCurrencyRepository.fetchCurrenciesLatestCalled)
         XCTAssertTrue(mockUseCaseOutput.loadSuccessCalled)
         XCTAssertFalse(mockUseCaseOutput.loadFailureCalled)
         XCTAssertEqual(useCase.latestTimestamp, 123_123_123)
@@ -133,8 +133,8 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
 
         wait(for: [expectation], timeout: 3.0)
 
-        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysCalled)
-        XCTAssertFalse(mockCurrencyRepository.fetchCurrencysLatestCalled)
+        XCTAssertTrue(mockCurrencyRepository.fetchCurrenciesCalled)
+        XCTAssertFalse(mockCurrencyRepository.fetchCurrenciesLatestCalled)
         XCTAssertTrue(mockUseCaseOutput.loadFailureCalled)
         XCTAssertFalse(mockUseCaseOutput.loadSuccessCalled)
         XCTAssertEqual(useCase.convertResults, [.JPY: Decimal(0), .USD: Decimal(0)])
@@ -224,8 +224,8 @@ final class CurrencyConvertUseCaseImpTests: XCTestCase {
 
         wait(for: [expectation], timeout: 3.0)
 
-        XCTAssertTrue(mockCurrencyRepository.fetchCurrencysLatestCalled)
-        XCTAssertFalse(mockCurrencyRepository.fetchCurrencysCalled)
+        XCTAssertTrue(mockCurrencyRepository.fetchCurrenciesLatestCalled)
+        XCTAssertFalse(mockCurrencyRepository.fetchCurrenciesCalled)
         XCTAssertTrue(mockUseCaseOutput.loadSuccessCalled)
         XCTAssertFalse(mockUseCaseOutput.loadFailureCalled)
     }

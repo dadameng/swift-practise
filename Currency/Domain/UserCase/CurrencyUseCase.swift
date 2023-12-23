@@ -76,12 +76,12 @@ extension CurrencyConvertUseCaseImp: CurrencyUseCase {
     }
 
     func refreshCurrency() {
-        let task = currencyRepository.fetchLatestCurrencys()
+        let task = currencyRepository.fetchLatestCurrencies()
         executeCurrencyTask(task, withInitialValue: currentCurrencyValue)
     }
 
     func loadCurrency() {
-        let task = currencyRepository.fetchCurrencys()
+        let task = currencyRepository.fetchCurrencies()
         executeCurrencyTask(task, withInitialValue: initialCurrencyValue)
     }
     

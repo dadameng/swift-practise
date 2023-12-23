@@ -1,7 +1,7 @@
 import Foundation
 
 protocol APICache {
-    var maxCacheAge: TimeInterval { get }
+    var maxCacheDuration: TimeInterval { get }
     var maxMemoryCost: Int { get }
     var maxCacheSize: Int { get }
 
@@ -30,7 +30,7 @@ class CacheWrapper<T>: NSObject {
 final class DefaultAPICache: APICache {
     private let namespace = "com.dadameng.APICache"
 
-    var maxCacheAge: TimeInterval
+    var maxCacheDuration: TimeInterval
     var maxMemoryCost: Int
     var maxCacheSize: Int
     var generatePath : ((String) -> URL)?
@@ -45,7 +45,7 @@ final class DefaultAPICache: APICache {
     unowned var ioQueue: DispatchQueue
 
     init(
-        maxCacheAge: TimeInterval,
+        maxCacheDuration: TimeInterval,
         maxMemoryCost: Int,
         maxCacheSize: Int,
         memCache: NSCache<NSString, CacheWrapper<Any>>,
@@ -55,7 +55,7 @@ final class DefaultAPICache: APICache {
         fileManager: FileManager = FileManager.default,
         ioQueue: DispatchQueue = DispatchQueue.global(qos: .background)
     ) {
-        self.maxCacheAge = maxCacheAge
+        self.maxCacheDuration = maxCacheDuration
         self.maxMemoryCost = maxMemoryCost
         self.maxCacheSize = maxCacheSize
         self.memCache = memCache
@@ -178,7 +178,7 @@ final class DefaultAPICache: APICache {
                 options: .skipsHiddenFiles
             ) else { return }
 
-            let expirationDate = Date().addingTimeInterval(-self.maxCacheAge)
+            let expirationDate = Date().addingTimeInterval(-self.maxCacheDuration)
             var filesToDelete = [URL]()
             var currentCacheSize: Int = 0
             var cacheFiles = [URL: URLResourceValues]()

@@ -12,7 +12,7 @@ final class CurrencyConvertDIContainerImp {
     }
 
     private enum CacheConfiguration {
-        static let maxCacheAge = 60 * 60 * 24 * 7 // 1week
+        static let maxCacheDuration = 60 * 60 * 24 * 7 // 1week
         static let maxMemoryCost = 10 * 1024 * 1024 // 10MB
         static let maxCacheSize = 20 * 1024 * 1024 // 20MB
     }
@@ -28,7 +28,7 @@ final class CurrencyConvertDIContainerImp {
 
     func makeCurrencyConvertAPICache() -> APICache {
         DefaultAPICache(
-            maxCacheAge: TimeInterval(CacheConfiguration.maxCacheAge),
+            maxCacheDuration: TimeInterval(CacheConfiguration.maxCacheDuration),
             maxMemoryCost: CacheConfiguration.maxMemoryCost,
             maxCacheSize: CacheConfiguration.maxCacheSize,
             memCache: NSCache(),

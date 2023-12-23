@@ -40,7 +40,7 @@ final class CurrencyRepoImpTests: XCTestCase {
     }
 
     final class MockAPICache: APICache {
-        var maxCacheAge: TimeInterval = 60 * 60
+        var maxCacheDuration: TimeInterval = 60 * 60
         var maxMemoryCost: Int = 10_000_000
         var maxCacheSize: Int = 1024 * 1024
 
@@ -116,7 +116,7 @@ final class CurrencyRepoImpTests: XCTestCase {
         
         Task {
             do {
-                let result = try await currencyRepoImp.fetchLatestCurrencys().value
+                let result = try await currencyRepoImp.fetchLatestCurrencies().value
                 XCTAssertEqual(result.rates[.JPY], mockExchangeData.rates[.JPY])
                 XCTAssertEqual(result.rates[.USD], mockExchangeData.rates[.USD])
                 XCTAssertFalse(mockAPICache.memoryCacheHasRetrieved)
@@ -124,7 +124,7 @@ final class CurrencyRepoImpTests: XCTestCase {
                 expectation.fulfill()
 
             } catch {
-                XCTFail("Received fetchLatestCurrencys \(error)")
+                XCTFail("Received fetchLatestCurrencies \(error)")
             }
         }
         wait(for: [expectation], timeout: 3.0)
@@ -153,7 +153,7 @@ final class CurrencyRepoImpTests: XCTestCase {
         
         Task {
             do {
-                let result = try await currencyRepoImp.fetchCurrencys().value
+                let result = try await currencyRepoImp.fetchCurrencies().value
                 XCTAssertEqual(result.rates[.JPY], mockExchangeData.rates[.JPY])
                 XCTAssertEqual(result.rates[.USD], mockExchangeData.rates[.USD])
                 XCTAssertTrue(mockAPICache.memoryCacheHasRetrieved)
@@ -161,7 +161,7 @@ final class CurrencyRepoImpTests: XCTestCase {
                 expectation.fulfill()
 
             } catch {
-                XCTFail("Received fetchLatestCurrencys \(error)")
+                XCTFail("Received fetchLatestCurrencies \(error)")
             }
         }
         wait(for: [expectation], timeout: 3.0)
@@ -191,7 +191,7 @@ final class CurrencyRepoImpTests: XCTestCase {
         
         Task {
             do {
-                let result = try await currencyRepoImp.fetchCurrencys().value
+                let result = try await currencyRepoImp.fetchCurrencies().value
                 XCTAssertEqual(result.rates[.JPY], mockExchangeData.rates[.JPY])
                 XCTAssertEqual(result.rates[.USD], mockExchangeData.rates[.USD])
                 XCTAssertFalse(mockAPICache.memoryCacheHasRetrieved)
@@ -199,7 +199,7 @@ final class CurrencyRepoImpTests: XCTestCase {
                 expectation.fulfill()
 
             } catch {
-                XCTFail("Received fetchLatestCurrencys \(error)")
+                XCTFail("Received fetchLatestCurrencies \(error)")
             }
         }
         wait(for: [expectation], timeout: 3.0)
@@ -231,7 +231,7 @@ final class CurrencyRepoImpTests: XCTestCase {
             do {
                 XCTAssertFalse(mockAPICache.memoryCacheHasRetrieved)
                 XCTAssertFalse(mockAPICache.diskCacheHasRetrieved)
-                let result = try await currencyRepoImp.fetchCurrencys().value
+                let result = try await currencyRepoImp.fetchCurrencies().value
                 XCTAssertEqual(result.rates[.JPY], mockExchangeData.rates[.JPY])
                 XCTAssertEqual(result.rates[.USD], mockExchangeData.rates[.USD])
                 XCTAssertTrue(mockAPICache.memoryCacheHasRetrieved)
@@ -239,7 +239,7 @@ final class CurrencyRepoImpTests: XCTestCase {
                 expectation.fulfill()
 
             } catch {
-                XCTFail("Received fetchLatestCurrencys \(error)")
+                XCTFail("Received fetchLatestCurrencies \(error)")
             }
         }
         wait(for: [expectation], timeout: 3.0)
@@ -271,7 +271,7 @@ final class CurrencyRepoImpTests: XCTestCase {
             do {
                 XCTAssertFalse(mockAPICache.memoryCacheHasRetrieved)
                 XCTAssertFalse(mockAPICache.diskCacheHasRetrieved)
-                let result = try await currencyRepoImp.fetchCurrencys().value
+                let result = try await currencyRepoImp.fetchCurrencies().value
                 XCTAssertEqual(result.rates[.JPY], mockExchangeData.rates[.JPY])
                 XCTAssertEqual(result.rates[.USD], mockExchangeData.rates[.USD])
                 XCTAssertTrue(mockAPICache.memoryCacheHasRetrieved)
@@ -279,7 +279,7 @@ final class CurrencyRepoImpTests: XCTestCase {
                 expectation.fulfill()
 
             } catch {
-                XCTFail("Received fetchLatestCurrencys \(error)")
+                XCTFail("Received fetchLatestCurrencies \(error)")
             }
         }
         wait(for: [expectation], timeout: 3.0)
@@ -309,7 +309,7 @@ final class CurrencyRepoImpTests: XCTestCase {
             do {
                 XCTAssertFalse(mockAPICache.memoryCacheHasRetrieved)
                 XCTAssertFalse(mockAPICache.diskCacheHasRetrieved)
-                _ = try await currencyRepoImp.fetchCurrencys().value
+                _ = try await currencyRepoImp.fetchCurrencies().value
             } catch let requestError as NetworkServiceError {
                 switch requestError {
                 case .responseFailure(.invalidData):

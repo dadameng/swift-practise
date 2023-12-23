@@ -1,6 +1,6 @@
 import Foundation
 
 protocol CurrencyRepository {
-    func fetchLatestCurrencys() -> FetchResult<ExchangeData>
-    func fetchCurrencys() -> FetchResult<ExchangeData>
+    func fetchLatestCurrencies() -> FetchResult<ExchangeData>
+    func fetchCurrencies() -> FetchResult<ExchangeData>
 }

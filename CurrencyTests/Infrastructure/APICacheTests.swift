@@ -23,7 +23,7 @@ final class APICacheTests: XCTestCase {
     override func setUp() {
         super.setUp()
         cache = DefaultAPICache(
-            maxCacheAge: 3600,
+            maxCacheDuration: 3600,
             maxMemoryCost: 1024,
             maxCacheSize: 1024,
             memCache: memCache,

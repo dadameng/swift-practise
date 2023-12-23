@@ -16,14 +16,14 @@ final class CurrencyRepositoryImp {
 }
 
 extension CurrencyRepositoryImp: CurrencyRepository {
-    func fetchLatestCurrencys() -> FetchResult<ExchangeData> {
+    func fetchLatestCurrencies() -> FetchResult<ExchangeData> {
         let endpoint = dependencies.endpointsFactory.currencyLatest()
         let requestKey = endpoint.uniqueKey
         requestTimeMap[requestKey] = Date().timeIntervalSince1970
         return dependencies.networkService.requestTask(endpoint: endpoint)
     }
 
-    func fetchCurrencys() -> FetchResult<ExchangeData> {
+    func fetchCurrencies() -> FetchResult<ExchangeData> {
         let endpoint = dependencies.endpointsFactory.currencyLatest()
         let now = Date().timeIntervalSince1970
         let requestKey = endpoint.uniqueKey
@@ -45,7 +45,7 @@ extension CurrencyRepositoryImp: CurrencyRepository {
             do {
                 // Attempt the primary data fetching operation
                 requestTimeMap[requestKey] = Date().timeIntervalSince1970
-                return try await fetchLatestCurrencys().value
+                return try await fetchLatestCurrencies().value
             } catch {
                 // Try to retrieve data from the cache, and if it fails, rethrow the original error
                 guard let cacheResponse: ExchangeData = try? await dependencies.apiCache.convenienceResponse(key: requestKey) else {

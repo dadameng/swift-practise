@@ -28,7 +28,6 @@ final class CurrencyConvertTableCell: UITableViewCell {
         label.font = UIFont.systemFont(ofSize: 22, weight: .bold)
         label.textColor = AppColor.secondCellText.color
         label.textAlignment = .right
-        label.contentMode = .right
         return label
     }()
 
