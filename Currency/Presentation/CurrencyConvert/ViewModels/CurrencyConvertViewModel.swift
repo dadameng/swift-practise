@@ -9,7 +9,6 @@ protocol CurrencyConvertViewModelInput: ViewControllerLifecycleBehavior, Currenc
     func didUpdateAmount(_ amount: String?)
     func didTriggerRefresh()
     func didSelectItem(at index: Int)
-    func willChangeItem(_ value: String)
     func didInputValidValue()
     func didResetInput()
 }
@@ -69,7 +68,20 @@ final class CurrencyConvertViewModelImp: ObservableObject {
         return formatter
     }()
 
-    func updateItemViewModels() {
+    private lazy var dateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        formatter.timeZone = TimeZone(abbreviation: "JST")
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        return formatter
+    }()
+
+    private func formatTimestamp(_ timestamp: TimeInterval) -> String {
+        let date = Date(timeIntervalSince1970: timestamp)
+        return dateFormatter.string(from: date)
+    }
+
+    private func updateItemViewModels() {
         internalItemViewModels = dependencies.useCase.selectedSymbols.enumerated()
             .map { [unowned self] index, currency in
                 CurrencyConvertItemViewModel(
@@ -84,18 +96,15 @@ final class CurrencyConvertViewModelImp: ObservableObject {
             }
         successSubject.send(internalItemViewModels)
     }
+
+    private func loadInitialData() {
+        isRequesting = true
+        dependencies.useCase.loadCurrency()
+        updateItemViewModels()
+    }
 }
 
 extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
-    private func formatTimestamp(_ timestamp: TimeInterval) -> String {
-        let date = Date(timeIntervalSince1970: timestamp)
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-        formatter.timeZone = TimeZone(abbreviation: "JST")
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        return formatter.string(from: date)
-    }
-
     var lastTimeString: String {
         formatTimestamp(dependencies.useCase.latestTimestamp)
     }
@@ -196,17 +205,9 @@ extension CurrencyConvertViewModelImp: CurrencyConvertViewModel {
         dependencies.useCase.refreshCurrency()
     }
 
-    func willChangeItem(_: String) {}
-
     func didSelectItem(at index: Int) {
         selectedIndex = index
         didUpdateAmount("\(dependencies.useCase.initialCurrencyValue)")
-    }
-
-    private func loadInitialData() {
-        isRequesting = true
-        dependencies.useCase.loadCurrency()
-        updateItemViewModels()
     }
 }
 
