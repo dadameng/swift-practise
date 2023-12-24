@@ -2,7 +2,7 @@ import UIKit
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
     var window: UIWindow?
-    let router = AppRouter.shared
+    var appRouter : AppRouter?
 
     func scene(_ scene: UIScene, willConnectTo _: UISceneSession, options _: UIScene.ConnectionOptions) {
         // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.
@@ -13,8 +13,11 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         }
         guard let windowScene = (scene as? UIWindowScene) else { return }
         let window = UIWindow(windowScene: windowScene)
+        
+        let router = AppRouter(dependencies: .init(appDIContainer: AppDIContainerImp()))
         router.setupRootViewController(on: window)
-
+        self.appRouter = router
+        
         self.window = window
         window.makeKeyAndVisible()
     }

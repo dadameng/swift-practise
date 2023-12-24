@@ -9,7 +9,17 @@ protocol CurrencyConvertCoordinator {
     )
 }
 
-final class CurrencyConvertCoordinatorImp {}
+final class CurrencyConvertCoordinatorImp {
+    struct Dependencies {
+        unowned let appRouterFlowCoordinator: AppRouterFlowCoordinator
+    }
+    private let dependencies: Dependencies
+
+    init(dependencies: Dependencies) {
+        self.dependencies = dependencies
+    }
+    
+}
 
 extension CurrencyConvertCoordinatorImp: CurrencyConvertCoordinator {
     func showCurrencyListViewController(
@@ -18,7 +28,7 @@ extension CurrencyConvertCoordinatorImp: CurrencyConvertCoordinator {
         at index: Int,
         symbolsChangeBlock: @escaping ([Currency]) -> Void
     ) {
-        AppRouter.shared.showCurrencyListViewController(
+        dependencies.appRouterFlowCoordinator.showCurrencyListViewController(
             from: navigationController,
             in: symbols,
             at: index,

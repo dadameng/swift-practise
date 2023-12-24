@@ -10,7 +10,7 @@ final class CurrencyListDIContainerImp {
     struct Dependencies {
         let apiDataTransferService: NetworkService
         let navigationController: UINavigationController
-        unowned let appDIContainer: AppDIContainer
+        unowned let appRouterFlowCoordinator: AppRouterFlowCoordinator
     }
 
     private let dependencies: Dependencies
@@ -23,7 +23,7 @@ final class CurrencyListDIContainerImp {
         CurrencyListViewModelImp(dependencies: .init(currentSymbols: symbols, initialChangeIndex: index))
     }
 
-    func makeCurrencyListCoordinato(block: @escaping ([Currency]) -> Void) -> CurrencyListCoordinator {
+    func makeCurrencyListCoordinator(block: @escaping ([Currency]) -> Void) -> CurrencyListCoordinator {
         CurrencyListCoordinatorImp(symbolsChangeBlock: block)
     }
 }
@@ -34,7 +34,7 @@ extension CurrencyListDIContainerImp: CurrencyListDIContainer {
         at index: Int,
         symbolsChangeBlock: @escaping ([Currency]) -> Void
     ) -> UIViewController {
-        let coordinator = makeCurrencyListCoordinato(block: symbolsChangeBlock)
+        let coordinator = makeCurrencyListCoordinator(block: symbolsChangeBlock)
         let viewModel = makeCurrencyListtViewModel(symbols, at: index)
         return CurrencyListController(coordinator: coordinator, viewModel: viewModel)
     }

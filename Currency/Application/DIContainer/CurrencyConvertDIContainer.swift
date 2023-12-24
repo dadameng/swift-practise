@@ -8,7 +8,7 @@ final class CurrencyConvertDIContainerImp {
     struct Dependencies {
         let apiDataTransferService: NetworkService
         let navigationController: UINavigationController
-        unowned let appDIContainer: AppDIContainer
+        unowned let appRouterFlowCoordinator: AppRouterFlowCoordinator
     }
 
     private enum CacheConfiguration {
@@ -64,7 +64,7 @@ final class CurrencyConvertDIContainerImp {
     }
 
     func makeCurrencyConvertCoordinator() -> CurrencyConvertCoordinator {
-        CurrencyConvertCoordinatorImp()
+        CurrencyConvertCoordinatorImp(dependencies: .init(appRouterFlowCoordinator: dependencies.appRouterFlowCoordinator))
     }
 }
 
