@@ -10,7 +10,7 @@ final class CurrencyListDIContainerImp {
     struct Dependencies {
         let apiDataTransferService: NetworkService
         let navigationController: UINavigationController
-        unowned let appRouterFlowCoordinator: AppRouterFlowCoordinator
+        unowned let appRouterFlowCoordinator: AppFlowCoordinator
     }
 
     private let dependencies: Dependencies

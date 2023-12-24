@@ -11,7 +11,7 @@ protocol CurrencyConvertCoordinator {
 
 final class CurrencyConvertCoordinatorImp {
     struct Dependencies {
-        unowned let appRouterFlowCoordinator: AppRouterFlowCoordinator
+        unowned let appRouterFlowCoordinator: AppFlowCoordinator
     }
     private let dependencies: Dependencies
 

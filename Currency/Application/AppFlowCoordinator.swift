@@ -5,9 +5,9 @@ protocol AppBaseFlowCoordinator : AnyObject {
     func setupRootViewController(on window: UIWindow)
 }
 
-typealias AppRouterFlowCoordinator = AppBaseFlowCoordinator & CurrencyConvertCoordinator
+typealias AppFlowCoordinator = AppBaseFlowCoordinator & CurrencyConvertCoordinator
 
-final class AppRouter {
+final class AppFlowCoordinatorImp {
     struct Dependencies {
         let appDIContainer: AppDIContainer
     }
@@ -17,12 +17,12 @@ final class AppRouter {
     }
 }
 
-extension AppRouter: AppRouterFlowCoordinator  {
+extension AppFlowCoordinatorImp: AppFlowCoordinator  {
     // MARK: - AppBaseFlowCoordinator
     func setupRootViewController(on window: UIWindow) {
         let navigationViewController = UINavigationController()
 
-        let currencyConvertDIContainer = dependencies.appDIContainer.makeConvertDIContainer(router: self, navigationController: navigationViewController)
+        let currencyConvertDIContainer = dependencies.appDIContainer.makeConvertDIContainer(appFlowCoordinator: self, navigationController: navigationViewController)
         let currencyConvertViewController = currencyConvertDIContainer.makeCurrencyConvertViewController()
         navigationViewController.viewControllers = [currencyConvertViewController]
         window.rootViewController = navigationViewController
@@ -35,7 +35,7 @@ extension AppRouter: AppRouterFlowCoordinator  {
         at index: Int,
         symbolsChangeBlock: @escaping ([Currency]) -> Void
     ) {
-        let listDIContainer = dependencies.appDIContainer.makeListDIContainer(router: self, navigationController: navigationController)
+        let listDIContainer = dependencies.appDIContainer.makeListDIContainer(appFlowCoordinator: self, navigationController: navigationController)
         let listVC = listDIContainer.makeCurrencyListtViewController(in: symbols, at: index, symbolsChangeBlock: symbolsChangeBlock)
         navigationController.pushViewController(listVC, animated: true)
     }

@@ -1,8 +1,8 @@
 import UIKit
 
 protocol AppDIContainer {
-    func makeConvertDIContainer(router: AppRouterFlowCoordinator, navigationController: UINavigationController) -> CurrencyConvertDIContainer
-    func makeListDIContainer(router: AppRouterFlowCoordinator, navigationController: UINavigationController) -> CurrencyListDIContainer
+    func makeConvertDIContainer(appFlowCoordinator: AppFlowCoordinator, navigationController: UINavigationController) -> CurrencyConvertDIContainer
+    func makeListDIContainer(appFlowCoordinator: AppFlowCoordinator, navigationController: UINavigationController) -> CurrencyListDIContainer
 }
 
 final class AppDIContainerImp : AppDIContainer {
@@ -19,20 +19,20 @@ final class AppDIContainerImp : AppDIContainer {
         return DefaultNetworkService(config: config)
     }()
 
-    func makeConvertDIContainer(router: AppRouterFlowCoordinator, navigationController: UINavigationController) -> CurrencyConvertDIContainer {
+    func makeConvertDIContainer(appFlowCoordinator: AppFlowCoordinator, navigationController: UINavigationController) -> CurrencyConvertDIContainer {
         let dependencies = CurrencyConvertDIContainerImp.Dependencies(
             apiDataTransferService: apiDataTransferService,
             navigationController: navigationController,
-            appRouterFlowCoordinator: router
+            appRouterFlowCoordinator: appFlowCoordinator
         )
         return CurrencyConvertDIContainerImp(dependencies: dependencies)
     }
 
-    func makeListDIContainer(router: AppRouterFlowCoordinator, navigationController: UINavigationController) -> CurrencyListDIContainer {
+    func makeListDIContainer(appFlowCoordinator: AppFlowCoordinator, navigationController: UINavigationController) -> CurrencyListDIContainer {
         let dependencies = CurrencyListDIContainerImp.Dependencies(
             apiDataTransferService: apiDataTransferService,
             navigationController: navigationController,
-            appRouterFlowCoordinator: router
+            appRouterFlowCoordinator: appFlowCoordinator
         )
         return CurrencyListDIContainerImp(dependencies: dependencies)
     }
