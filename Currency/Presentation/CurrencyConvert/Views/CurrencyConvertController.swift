@@ -3,7 +3,7 @@ import Foundation
 import UIKit
 
 final class CurrencyConvertController: UIViewController, UITableViewDelegate, UITableViewDataSource {
-    let keyboardHeightRate = 0.35
+    static private let keyboardHeightRate = 0.35
 
     // MARK: - property
 
@@ -70,7 +70,11 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
     }
 
     func tableView(_: UITableView, heightForRowAt _: IndexPath) -> CGFloat {
-        (view.frame.height * (1 - keyboardHeightRate) - view.safeAreaInsets.top - view.safeAreaInsets.bottom) / 5
+        let totalHeight = view.frame.height * (1 - CurrencyConvertController.keyboardHeightRate)
+        let availableHeight = totalHeight - view.safeAreaInsets.top - view.safeAreaInsets.bottom
+        let rowCount = CGFloat(viewModel.itemViewModels.count)
+        let rowHeight = availableHeight / rowCount
+        return rowHeight
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -164,7 +168,7 @@ final class CurrencyConvertController: UIViewController, UITableViewDelegate, UI
         numericKeyboard!.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            numericKeyboard!.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: keyboardHeightRate),
+            numericKeyboard!.heightAnchor.constraint(equalTo: view.heightAnchor, multiplier: CurrencyConvertController.keyboardHeightRate),
             numericKeyboard!.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor),
             numericKeyboard!.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             numericKeyboard!.trailingAnchor.constraint(equalTo: view.trailingAnchor),

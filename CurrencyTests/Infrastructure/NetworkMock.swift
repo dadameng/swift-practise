@@ -94,7 +94,6 @@ final class EndpointMock<T: Codable>: ApiTask {
     }
 
     func urlRequest(with _: NetworkConfigurable) throws -> URLRequest {
-        // Use the provided extension method to create a URLRequest
         URLRequest(url: URL(string: "\(path)")!)
     }
 }

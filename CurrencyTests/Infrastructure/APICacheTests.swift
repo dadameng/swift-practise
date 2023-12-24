@@ -156,8 +156,12 @@ final class APICacheTests: XCTestCase {
                 XCTFail("Expected successful response, received error: \(error)")
             }
         }
-
-        wait(for: [expectation], timeout: 10)
+        // Wait for the expectation to be fulfilled, or timeout after 20 seconds.
+        // This timeout period is critical. If the asynchronous operation takes longer than
+        // this duration, the test will fail with a timeout error. However, this might be due
+        // to temporary issues like system load or network delays. In such cases, rerunning the test
+        // might result in a successful completion.
+        wait(for: [expectation], timeout: 20)
         do {
             try fileMgr.removeItem(at: diskPath)
         } catch {

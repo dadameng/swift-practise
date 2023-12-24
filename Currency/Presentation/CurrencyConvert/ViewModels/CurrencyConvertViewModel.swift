@@ -43,7 +43,7 @@ final class CurrencyConvertViewModelImp: ObservableObject {
         }
     }
 
-    @Published var isRequesting: Bool = false
+    @Published private var isRequesting: Bool = false
     var formatteMaximumFractionDigits = 3
 
     private var currentInput: String = ""
@@ -84,7 +84,7 @@ final class CurrencyConvertViewModelImp: ObservableObject {
     private func updateItemViewModels() {
         internalItemViewModels = dependencies.useCase.selectedSymbols.enumerated()
             .map { [unowned self] index, currency in
-                CurrencyConvertItemViewModel(
+                CurrencyConvertItemViewModelImp(
                     title: currency.rawValue,
                     currencyName: CurrencyDesciption.descriptions[currency]!,
                     valueString: selectedIndex == index ? currentInput : formatter.string(for: dependencies.useCase.convertResults[currency])!,

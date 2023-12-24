@@ -123,7 +123,6 @@ final class CurrencyConvertTableCell: UITableViewCell {
     }
 
     private func updateLayoutForSelectedState(isSelected: Bool) {
-        // 先重置到默认状态
         currencyTitleLabel.isHidden = false
         currencyValueLabel.leadingAnchor.constraint(equalTo: currencyTitleLabel.trailingAnchor, constant: viewsSpace).isActive = false
         currencyValueLabel.leadingAnchor.constraint(equalTo: flagImageView.trailingAnchor, constant: viewsSpace).isActive = false
