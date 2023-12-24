@@ -27,7 +27,7 @@ class CacheWrapper<T>: NSObject {
     }
 }
 
-final class DefaultAPICache: APICache {
+final class DefaultAPICache {
     private let namespace = "com.dadameng.APICache"
 
     var maxCacheDuration: TimeInterval
@@ -88,7 +88,25 @@ final class DefaultAPICache: APICache {
         }
         return generatePath(key)
     }
+    
+    private func isCacheSizeExceeded() -> Bool {
+        let currentCacheSize = calculateDiskCacheSize()
+        return currentCacheSize > maxCacheSize
+    }
 
+    private func calculateDiskCacheSize() -> Int {
+        var size = 0
+        let fileEnumerator = fileManager.enumerator(at: diskCachePath, includingPropertiesForKeys: [.totalFileAllocatedSizeKey])
+        
+        while let fileURL = fileEnumerator?.nextObject() as? URL {
+            size += (try? fileURL.resourceValues(forKeys: [.totalFileAllocatedSizeKey]).totalFileAllocatedSize ?? 0) ?? 0
+        }
+
+        return size
+    }
+}
+
+extension DefaultAPICache : APICache {
     func convenienceStore(with response: some Codable, key: String) {
         storeMemoryCache(with: response, key: key)
         storeResponseToDisk(with: response, key: key)
@@ -102,6 +120,9 @@ final class DefaultAPICache: APICache {
         let diskPath = diskPath(key: key)
         prepareDirectoryIfNeeded(desPathURL: diskPath)
         ioQueue.async {
+            if self.isCacheSizeExceeded() {
+                self.cleanDishCache()
+            }
             do {
                 let encodedData = try self.diskEncoder.encode(response)
                 try encodedData.write(to: diskPath, options: .atomic)
